@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:vm="using:MekatrolCAM.ViewModels"
+        x:Class="MekatrolCAM.Views.MainWindow"
+		x:DataType="vm:MainWindowViewModel"
+        Width="1000" Height="650"
+        Title="MekatrolCAM"
+        Background="{DynamicResource ThemeBackgroundBrush}">
+	<Window.DataContext>
+		<vm:MainWindowViewModel/>
+	</Window.DataContext>
+
+	<DockPanel>
+		<!-- Top menu -->
+		<Menu DockPanel.Dock="Top">
+			<MenuItem Header="_File">
+				<MenuItem Header="_New"/>
+				<MenuItem Header="_Open…"/>
+				<Separator/>
+				<MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
+			</MenuItem>
+			<MenuItem Header="_Edit">
+				<MenuItem Header="_Preferences"/>
+			</MenuItem>
+			<MenuItem Header="_Help">
+				<MenuItem Header="_About"/>
+			</MenuItem>
+		</Menu>
+
+		<!-- Left tree -->
+		<Grid DockPanel.Dock="Left" Width="260">
+			<TreeView ItemsSource="{Binding Roots}">
+				<TreeView.DataTemplates>
+					<TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:TreeNode">
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<TextBlock Text="📁"/>
+							<TextBlock Text="{Binding Name}"/>
+						</StackPanel>
+					</TreeDataTemplate>
+				</TreeView.DataTemplates>
+			</TreeView>
+		</Grid>
+
+		<!-- Main content -->
+		<Border Margin="8" Padding="12"
+				Background="{DynamicResource ThemeControlLowBrush}">
+			<TextBlock Text="{Binding SelectedInfo}" FontSize="18"/>
+		</Border>
+	</DockPanel>
+</Window>

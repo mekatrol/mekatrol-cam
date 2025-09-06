@@ -205,8 +205,9 @@ public class SvgParser : ISvgParser
             // rx is null, so default to ry
             rx = ry;
         }
-        else             // ry is null, so default to rx
+        else             
         {
+            // ry is null, so default to rx
             ry ??= rx;
         }
 

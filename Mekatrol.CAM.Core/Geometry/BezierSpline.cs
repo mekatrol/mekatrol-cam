@@ -113,7 +113,6 @@ internal class BezierSpline
         return calculatedPoints;
     }
 
-
     public static PointDouble GetCubicPoint(double t, PointDouble p0, PointDouble p1, PointDouble p2, PointDouble p3)
     {
         // Cubic Bézier with control points p0 (start), p1, p2, p3 (end).
@@ -170,7 +169,6 @@ internal class BezierSpline
 
         return points;
     }
-
 
     public static PointDouble GetQuadraticPoint(double t, PointDouble p0, PointDouble p1, PointDouble p2)
     {
@@ -240,6 +238,6 @@ internal class BezierSpline
         var control1 = bezier.Location + twoThirds * (bezier.Control - bezier.Location);
         var control2 = bezier.EndLocation + twoThirds * (bezier.Control - bezier.EndLocation);
 
-        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new Transform());
+        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new GeometryTransform());
     }
 }

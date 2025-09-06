@@ -73,7 +73,7 @@ public abstract class BaseEntity : IGeometricEntity
         var mTransformed = Transform.GetMatrix() * m;
 
         Transform.Scale = mTransformed.GetScale();
-        Transform.Rotate = new Rotate(GeometryUtils.RadiansToDegrees(mTransformed.GetRotation()), 0, 0);
+        Transform.Rotate = new GeometryRotate(GeometryUtils.RadiansToDegrees(mTransformed.GetRotation()), 0, 0);
         Transform.Translate = mTransformed.GetTranslation();
 
         Location *= m;

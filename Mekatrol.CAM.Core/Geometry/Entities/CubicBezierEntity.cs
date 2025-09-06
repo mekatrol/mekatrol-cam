@@ -8,7 +8,7 @@ public class CubicBezierEntity : BaseEntity, IGeometricEntity
     /// This empty constructor is used by the serializer
     /// </summary>
     public CubicBezierEntity()
-        : this(new PointDouble(), new PointDouble(), new PointDouble(), new PointDouble(), new Transform())
+        : this(new PointDouble(), new PointDouble(), new PointDouble(), new PointDouble(), new GeometryTransform())
     {
     }
 

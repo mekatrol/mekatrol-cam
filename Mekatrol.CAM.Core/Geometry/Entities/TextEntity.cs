@@ -8,7 +8,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
     /// This empty constructor is used by the serializer
     /// </summary>
     public TextEntity()
-        : this(0, 0, string.Empty, FontDescription.Default, StringAlignment.Near, new Transform())
+        : this(0, 0, string.Empty, FontDescription.Default, StringAlignment.Near, new GeometryTransform())
     {
 
     }

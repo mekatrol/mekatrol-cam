@@ -8,13 +8,13 @@ public class CircleEntity : BaseEntity, IGeometricEntity
     /// This empty constructor is used by the serializer
     /// </summary>
     public CircleEntity()
-        : this(0, 0, 1, new Transform(), null)
+        : this(0, 0, 1, new GeometryTransform(), null)
     {
 
     }
 
     public CircleEntity(PointDouble center, double radius, Guid? id)
-        : this(center.X, center.Y, radius, new Transform(), id)
+        : this(center.X, center.Y, radius, new GeometryTransform(), id)
     {
     }
 

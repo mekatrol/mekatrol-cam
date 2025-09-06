@@ -5,7 +5,7 @@ namespace Mekatrol.CAM.Core.Geometry.Entities;
 public class PathEntity : BaseEntity, IGeometricPathEntity
 {
     public PathEntity()
-        : this(0, 0, [], false, new Transform(), null)
+        : this(0, 0, [], false, new GeometryTransform(), null)
     {
     }
 

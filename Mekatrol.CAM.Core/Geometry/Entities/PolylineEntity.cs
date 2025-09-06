@@ -6,7 +6,7 @@ public class PolylineEntity(IReadOnlyList<PointDouble> points, ITransform transf
     /// <summary>
     /// This empty constructor is used by the serializer
     /// </summary>
-    public PolylineEntity() : this(new Transform(), null)
+    public PolylineEntity() : this(new GeometryTransform(), null)
     {
 
     }

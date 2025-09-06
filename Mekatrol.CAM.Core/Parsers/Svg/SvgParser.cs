@@ -504,7 +504,7 @@ public class SvgParser : ISvgParser
                         }
 
                         // Create text child
-                        var textEntity = new TextEntity(x, y, text.Trim(), font, textAlign, new Geometry.Entities.Transform());
+                        var textEntity = new TextEntity(x, y, text.Trim(), font, textAlign, new GeometryTransform());
                         childText.Add(textEntity);
                         var spaceSize = GeometryUtils.MeasureText("I", textEntity.Font, textAlign, 0, 0, Matrix3.Identity);
                         x += textEntity.Boundary.Size.X + spaceSize.X;
@@ -551,7 +551,7 @@ public class SvgParser : ISvgParser
             }
         }
 
-        var entityPath = new PathEntity(xElement, yElement, childText, false, new Geometry.Entities.Transform());
+        var entityPath = new PathEntity(xElement, yElement, childText, false, new GeometryTransform());
         return entityPath;
     }
 
@@ -600,11 +600,11 @@ public class SvgParser : ISvgParser
     private static Geometry.Entities.ITransform ParseTransformAttribute(XElement element)
     {
         var transformAttr = GetAttributeValue(element, "transform")?.Trim();
-        var transform = new Geometry.Entities.Transform();
+        var transform = new Geometry.Entities.GeometryTransform();
 
         if (string.IsNullOrWhiteSpace(transformAttr))
         {
-            return new Geometry.Entities.Transform();
+            return new Geometry.Entities.GeometryTransform();
         }
 
         var transformDefinitions = new List<string>();
@@ -647,7 +647,7 @@ public class SvgParser : ISvgParser
             {
                 var m = ParseMatrix(transformDefinition);
 
-                transform.Rotate += new Rotate(GeometryUtils.RadiansToDegrees(m.GetRotation()), 0.0, 0.0);
+                transform.Rotate += new GeometryRotate(GeometryUtils.RadiansToDegrees(m.GetRotation()), 0.0, 0.0);
                 transform.Scale *= m.GetScale();
                 transform.Translate += m.GetTranslation();
             }
@@ -825,15 +825,15 @@ public class SvgParser : ISvgParser
         return new PointDouble(values[0], values[1]);
     }
 
-    private static Rotate ParseRotate(string? value)
+    private static GeometryRotate ParseRotate(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return new Rotate();
+            return new GeometryRotate();
         }
 
         var values = ParseBracketValues(value, false, 0.0, 3);
-        return new Rotate(values[0], values[1], values[2]);
+        return new GeometryRotate(values[0], values[1], values[2]);
     }
 
     private static double ParseSkewX(string? value)

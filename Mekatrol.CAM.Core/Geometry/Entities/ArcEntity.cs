@@ -7,7 +7,7 @@ public class ArcEntity : BaseEntity, IGeometricEntity
     /// <summary>
     /// This empty constructor is used by the serializer
     /// </summary>
-    public ArcEntity() : this(new PointDouble(0, 0), new PointDouble(1, 0), new PointDouble(-1, 0), new PointDouble(2, 2), 0, 180, 0, new Transform())
+    public ArcEntity() : this(new PointDouble(0, 0), new PointDouble(1, 0), new PointDouble(-1, 0), new PointDouble(2, 2), 0, 180, 0, new GeometryTransform())
     {
 
     }

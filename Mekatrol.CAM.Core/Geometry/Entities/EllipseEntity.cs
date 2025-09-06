@@ -9,7 +9,7 @@ public class EllipseEntity : BaseEntity, IGeometricEntity
     /// </summary>
 
     public EllipseEntity()
-        : this(0, 0, 0, 0, new Transform())
+        : this(0, 0, 0, 0, new GeometryTransform())
     {
 
     }

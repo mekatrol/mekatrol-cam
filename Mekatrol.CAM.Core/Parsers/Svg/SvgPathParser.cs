@@ -86,7 +86,7 @@ internal class SvgPathParser(string data)
                     if (_startLocation != null)
                     {
                         // Close the path
-                        _geometries.Add(new LineEntity(_currentLocation, _startLocation.Value, new Transform()));
+                        _geometries.Add(new LineEntity(_currentLocation, _startLocation.Value, new GeometryTransform()));
 
                         // The path is closed, so we will start a new path
                         _startLocation = null;
@@ -167,7 +167,7 @@ internal class SvgPathParser(string data)
         _currentLocation = endLocation;
 
         // Pass start location, control 1, control 2, end location.
-        return new CubicBezierEntity(startLocation, control1, control2, endLocation, new Transform());
+        return new CubicBezierEntity(startLocation, control1, control2, endLocation, new GeometryTransform());
     }
 
     private IGeometricEntity ParseQuadraticBezier(SvgPathCommand command)
@@ -227,7 +227,7 @@ internal class SvgPathParser(string data)
         // Current location now end location
         _currentLocation = endLocation;
 
-        return new QuadraticBezier(startLocation, control, endLocation, new Transform());
+        return new QuadraticBezier(startLocation, control, endLocation, new GeometryTransform());
     }
 
     private void ParseMove(SvgPathCommand command)
@@ -287,7 +287,7 @@ internal class SvgPathParser(string data)
             _currentLocation = new PointDouble(x.Value, y.Value);
 
             // Create the line from the start and end location
-            lines.Add(new LineEntity(startLocation, _currentLocation, new Transform()));
+            lines.Add(new LineEntity(startLocation, _currentLocation, new GeometryTransform()));
         }
 
         return lines;
@@ -311,7 +311,7 @@ internal class SvgPathParser(string data)
         _currentLocation = new PointDouble(x.Value, startLocation.Y);
 
         // Create the line from the start and end location
-        return new LineEntity(startLocation, _currentLocation, new Transform());
+        return new LineEntity(startLocation, _currentLocation, new GeometryTransform());
     }
 
     private IGeometricEntity ParseVerticalLine(SvgPathCommand command)
@@ -332,7 +332,7 @@ internal class SvgPathParser(string data)
         _currentLocation = new PointDouble(startLocation.X, y.Value);
 
         // Create the line from the start and end location
-        return new LineEntity(startLocation, _currentLocation, new Transform());
+        return new LineEntity(startLocation, _currentLocation, new GeometryTransform());
     }
 
     private IList<IGeometricEntity> ParseArc(SvgPathCommand command)

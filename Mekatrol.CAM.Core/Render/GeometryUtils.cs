@@ -144,7 +144,7 @@ internal static class GeometryUtils
             // F.6.6 Correction of out-of-range radii
             // Step 1: Ensure radii are non-zero
             // If rx = 0 or ry = 0, then treat this as a straight line from (x1, y1) to (x2, y2) and stop.
-            return new LineEntity(x1, y1, x2, y2, new Geometry.Entities.Transform());
+            return new LineEntity(x1, y1, x2, y2, new GeometryTransform());
         }
 
         // F.6.6 Correction of out-of-range radii
@@ -307,7 +307,7 @@ internal static class GeometryUtils
             startAngle, // Radii
             sweepAngle,
             ellipseRotation,
-            new Geometry.Entities.Transform());
+            new GeometryTransform());
 
         return arc;
     }

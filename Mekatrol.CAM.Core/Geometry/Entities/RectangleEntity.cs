@@ -6,7 +6,7 @@ public class RectangleEntity : PointsEntity, IGeometricEntity
     /// This empty constructor is used by the serializer
     /// </summary>
     public RectangleEntity()
-        : this(0, 0, 0, 0, 0, 0, new Transform())
+        : this(0, 0, 0, 0, 0, 0, new GeometryTransform())
     {
 
     }

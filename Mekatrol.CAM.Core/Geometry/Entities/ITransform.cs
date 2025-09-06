@@ -6,7 +6,7 @@ public interface ITransform
 
     public PointDouble Translate { get; set; }
     public PointDouble Scale { get; set; }
-    public Rotate Rotate { get; set; }
+    public GeometryRotate Rotate { get; set; }
     public double SkewX { get; set; }
     public double SkewY { get; set; }
 }

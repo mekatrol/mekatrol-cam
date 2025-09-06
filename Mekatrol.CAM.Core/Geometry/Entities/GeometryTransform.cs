@@ -2,11 +2,11 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class Transform : ITransform
+public class GeometryTransform : ITransform
 {
-    public Transform()
+    public GeometryTransform()
     {
-        Rotate = new Rotate(0.0, 0.0, 0.0);
+        Rotate = new GeometryRotate(0.0, 0.0, 0.0);
         Scale = new PointDouble(1.0, 1.0);
         Translate = new PointDouble(0.0, 0.0);
         SkewX = 0.0;
@@ -15,7 +15,7 @@ public class Transform : ITransform
 
     public PointDouble Translate { get; set; }
     public PointDouble Scale { get; set; }
-    public Rotate Rotate { get; set; }
+    public GeometryRotate Rotate { get; set; }
     public double SkewX { get; set; }
     public double SkewY { get; set; }
 

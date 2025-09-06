@@ -4,11 +4,26 @@
              xmlns:local="using:MekatrolCAM"
              RequestedThemeVariant="Default">
 
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
-  
-    <Application.Styles>
-         <FluentTheme/>
-    </Application.Styles>
+	<Application.DataTemplates>
+		<local:ViewLocator/>
+	</Application.DataTemplates>
+
+	<Application.Styles>
+		<FluentTheme/>
+	</Application.Styles>
+
+	<Application.Resources>
+		<SolidColorBrush x:Key="VioletBrush" Color="#FF7C4DFF"/>
+		<SolidColorBrush x:Key="GreenBrush"  Color="#FF00C853"/>
+		<SolidColorBrush x:Key="RedBrush"    Color="#FFFF1744"/>
+		<SolidColorBrush x:Key="YellowBrush" Color="#FFFFD600"/>
+		<SolidColorBrush x:Key="TealBrush"   Color="#FF00BFA5"/>
+		<SolidColorBrush x:Key="MagentaBrush" Color="#FFF50057"/>
+		<SolidColorBrush x:Key="LimeBrush"   Color="#FF64DD17"/>
+		<SolidColorBrush x:Key="BlueBrush"   Color="#FF2962FF"/>
+		<SolidColorBrush x:Key="ChartreuseBrush" Color="#FFAEEA00"/>
+		<SolidColorBrush x:Key="PurpleBrush" Color="#FFD500F9"/>
+		<SolidColorBrush x:Key="CyanBrush"   Color="#FF00E5FF"/>
+		<SolidColorBrush x:Key="OrangeBrush" Color="#FFFF6D00"/>
+	</Application.Resources>
 </Application>

@@ -21,12 +21,14 @@ internal class QuadraticBezier : BaseEntity, IGeometricEntity
 
     public override IList<PointDouble[]> ToPoints()
     {
-        throw new NotImplementedException();
+        var points = BezierSpline.PlotQuadraticBezier(this).Select(p => new List<PointDouble>([p]).ToArray()).ToList();
+        return points;
     }
 
     public override void UpdateBoundary()
     {
-        throw new NotImplementedException();
+        var points = BezierSpline.PlotQuadraticBezier(this);
+        Boundary = GeometryUtils.GetBoundary(points?.ToList() ?? []);
     }
 
     protected override void TransformGeometry(Matrix3 m)

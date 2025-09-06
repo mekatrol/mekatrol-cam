@@ -7,10 +7,10 @@ using System.Collections.Generic;
 
 namespace MekatrolCAM.Views;
 
-public sealed class BoundsView : Control
+public sealed class GeometryView : Control
 {
-    public static readonly DirectProperty<BoundsView, IReadOnlyList<IGeometricEntity>?> EntitiesProperty =
-        AvaloniaProperty.RegisterDirect<BoundsView, IReadOnlyList<IGeometricEntity>?>(
+    public static readonly DirectProperty<GeometryView, IReadOnlyList<IGeometricEntity>?> EntitiesProperty =
+        AvaloniaProperty.RegisterDirect<GeometryView, IReadOnlyList<IGeometricEntity>?>(
             nameof(Entities),
             o => o.Entities,
             (o, v) => o.Entities = v);
@@ -24,7 +24,7 @@ public sealed class BoundsView : Control
     }
 
     public static readonly StyledProperty<double> ScaleProperty =
-        AvaloniaProperty.Register<BoundsView, double>(nameof(Scale), 1.0);
+        AvaloniaProperty.Register<GeometryView, double>(nameof(Scale), 1.0);
 
     public double Scale
     {
@@ -33,7 +33,7 @@ public sealed class BoundsView : Control
     }
 
     public static readonly StyledProperty<double> PointRadiusProperty =
-       AvaloniaProperty.Register<BoundsView, double>(nameof(PointRadius), 0.5);
+       AvaloniaProperty.Register<GeometryView, double>(nameof(PointRadius), 0.5);
     public double PointRadius
     {
         get => GetValue(PointRadiusProperty);
@@ -50,10 +50,9 @@ public sealed class BoundsView : Control
             return;
         }
 
-        var boundsPen = new Pen(Brushes.DarkGray, 1);
-        _ = Brushes.Red;
-        _ = PointRadius;
+        var boundsPen = new Pen(Brushes.DarkGray, 0.2);
 
+        var i = 0;
         foreach (var e in Entities)
         {
             var (min, max) = e.GetMinMax();
@@ -65,7 +64,13 @@ public sealed class BoundsView : Control
 
             context.DrawRectangle(null, boundsPen, rect);
 
-            context.Draw(e, Colors.GreenYellow, 1.0f);
+            var color = RenderColors.Palette[i++];
+            context.Draw(e, color, 1.0f);
+
+            if (i >= RenderColors.Palette.Length)
+            {
+                i = 0;
+            }
         }
     }
 }

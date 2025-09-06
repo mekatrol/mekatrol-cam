@@ -1,5 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+using Mekatrol.CAM.Core.Data;
+using Mekatrol.CAM.Core.Parsers.Svg;
 using MekatrolCAM.ViewModels;
 using MekatrolCAM.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +26,8 @@ sealed class Program
         builder.Services.AddSingleton<MainWindow>();
         builder.Services.AddSingleton<MainWindowViewModel>();
         builder.Services.AddSingleton<IWindowService, WindowService>();
+        builder.Services.AddSingleton<ISvgParser, SvgParser>();
+        builder.Services.AddSingleton<IDataStore, DataStore>();
 
         builder.Logging.AddConsole();
 

@@ -1,4 +1,5 @@
 ﻿using Mekatrol.CAM.Core.Render;
+using System.Linq;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
@@ -31,7 +32,8 @@ internal class CubicBezierEntity : BaseEntity, IGeometricEntity
 
     public override IList<PointDouble[]> ToPoints()
     {
-        throw new NotImplementedException();
+        var points = BezierSpline.PlotCubicBezier(this).Select(p => new List<PointDouble>([p]).ToArray()).ToList();
+        return points;
     }
 
     public override void UpdateBoundary()

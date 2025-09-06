@@ -9,7 +9,7 @@ using System.Xml.Linq;
 
 namespace Mekatrol.CAM.Core.Parsers.Svg;
 
-internal class SvgParser : ISvgParser
+public class SvgParser : ISvgParser
 {
     internal const string DoublePattern = @"([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)";
     internal const string DoublePairPattern = @"([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s*,{0,1}\s*([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)";

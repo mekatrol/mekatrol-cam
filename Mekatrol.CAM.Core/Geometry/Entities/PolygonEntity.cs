@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class PolygonEntity(IReadOnlyList<PointDouble> points, ITransform transform, Guid? id = null)
+public class PolygonEntity(IReadOnlyList<PointDouble> points, GeometryTransform transform, Guid? id = null)
     : PolybaseEntity(GeometricEntityType.Polygon, points, transform, id)
 {
     /// <summary>
@@ -11,7 +11,7 @@ public class PolygonEntity(IReadOnlyList<PointDouble> points, ITransform transfo
 
     }
 
-    public PolygonEntity(ITransform transform, Guid? id = null) : this([], transform, id)
+    public PolygonEntity(GeometryTransform transform, Guid? id = null) : this([], transform, id)
     {
     }
 }

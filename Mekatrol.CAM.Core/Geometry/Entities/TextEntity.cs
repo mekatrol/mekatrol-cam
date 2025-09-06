@@ -20,7 +20,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
         string value,
         FontDescription font,
         TextAlignment alignment,
-        ITransform transform,
+        GeometryTransform transform,
         Guid? id = null)
         : base(GeometricEntityType.Text, id, new PointDouble(x, y), transform)
     {

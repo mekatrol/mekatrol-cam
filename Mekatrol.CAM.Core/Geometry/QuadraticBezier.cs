@@ -5,7 +5,7 @@ namespace Mekatrol.CAM.Core.Geometry;
 
 internal class QuadraticBezier : BaseEntity, IGeometricEntity
 {
-    public QuadraticBezier(PointDouble location, PointDouble control, PointDouble endLocation, ITransform transform, Guid? id = null)
+    public QuadraticBezier(PointDouble location, PointDouble control, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.QuadraticBezier, id, location, transform)
     {
         EndLocation = endLocation;

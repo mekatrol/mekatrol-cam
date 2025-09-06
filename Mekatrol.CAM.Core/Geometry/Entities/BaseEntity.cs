@@ -3,26 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public abstract class BaseEntity : IGeometricEntity
+public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble location, GeometryTransform transform) : IGeometricEntity
 {
-    public BaseEntity(GeometricEntityType type, Guid? id, PointDouble location, ITransform transform)
-    {
-        Type = type;
-        Id = (id != null && id != Guid.Empty) ? id.Value : Guid.NewGuid();
-        Location = new PointDouble(location.X, location.Y);
-        Transform = transform;
-    }
+    public GeometricEntityType Type { get; set; } = type;
 
-    public GeometricEntityType Type { get; set; }
+    public Guid Id { get; set; } = (id != null && id != Guid.Empty) ? id.Value : Guid.NewGuid();
 
-    public Guid Id { get; set; }
-
-    public virtual PointDouble Location { get; set; }
+    public virtual PointDouble Location { get; set; } = new PointDouble(location.X, location.Y);
 
     [JsonIgnore]
     public IBoundary Boundary { get; set; } = new Boundary(new PointDouble(0, 0), new PointDouble(0, 0));
 
-    public ITransform Transform { get; set; }
+    public GeometryTransform Transform { get; set; } = transform;
 
     public bool BoundsContains(PointDouble point)
     {

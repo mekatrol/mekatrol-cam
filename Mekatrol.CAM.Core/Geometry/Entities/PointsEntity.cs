@@ -9,7 +9,7 @@ public abstract class PointsEntity : BaseEntity
     protected List<PointDouble> _transformedPoints = [];
     protected IList<PointDouble> _rotatedBoundary = [];
 
-    protected PointsEntity(GeometricEntityType type, Guid? id, PointDouble location, ITransform transform)
+    protected PointsEntity(GeometricEntityType type, Guid? id, PointDouble location, GeometryTransform transform)
         : base(type, id, location, transform)
     {
         UpdateTransformedPoints();

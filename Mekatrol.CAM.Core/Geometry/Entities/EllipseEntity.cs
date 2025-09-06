@@ -14,7 +14,7 @@ public class EllipseEntity : BaseEntity, IGeometricEntity
 
     }
 
-    public EllipseEntity(double x, double y, double rx, double ry, ITransform transform, Guid? id = null)
+    public EllipseEntity(double x, double y, double rx, double ry, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.Ellipse, id, new PointDouble(x, y), transform)
     {
         Radius = new PointDouble(rx, ry);

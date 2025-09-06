@@ -10,7 +10,7 @@ public interface IGeometricEntity
 
     IBoundary Boundary { get; }
 
-    ITransform Transform { get; }
+    GeometryTransform Transform { get; }
 
     void UpdateBoundary();
 

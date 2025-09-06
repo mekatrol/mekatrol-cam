@@ -18,7 +18,7 @@ public class CircleEntity : BaseEntity, IGeometricEntity
     {
     }
 
-    public CircleEntity(double centerX, double centerY, double radius, ITransform transform, Guid? id = null)
+    public CircleEntity(double centerX, double centerY, double radius, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.Circle, id, new PointDouble(centerX, centerY), transform)
     {
         Radius = radius;

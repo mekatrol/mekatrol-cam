@@ -20,7 +20,7 @@ public class ArcEntity : BaseEntity, IGeometricEntity
         double startAngle,
         double sweepAngle,
         double ellipseRotation,
-        ITransform transform,
+        GeometryTransform transform,
         Guid? id = null) : base(GeometricEntityType.Arc, id, centerLocation, transform)
     {
         Radii = new PointDouble(radii.X, radii.Y);

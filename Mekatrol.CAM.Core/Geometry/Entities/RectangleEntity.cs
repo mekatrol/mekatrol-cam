@@ -11,7 +11,7 @@ public class RectangleEntity : PointsEntity, IGeometricEntity
 
     }
 
-    public RectangleEntity(double x, double y, double w, double h, double rx, double ry, ITransform transform, Guid? id = null)
+    public RectangleEntity(double x, double y, double w, double h, double rx, double ry, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.Rectangle, id, new PointDouble(x, y), transform)
     {
         Size = new PointDouble(w, h);

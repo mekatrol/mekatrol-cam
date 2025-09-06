@@ -9,7 +9,7 @@ public class PathEntity : BaseEntity, IGeometricPathEntity
     {
     }
 
-    public PathEntity(double x, double y, IList<IGeometricEntity> entities, bool closed, ITransform transform, Guid? id = null)
+    public PathEntity(double x, double y, IList<IGeometricEntity> entities, bool closed, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.Path, id, new PointDouble(x, y), transform)
     {
         Entities = entities;

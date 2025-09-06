@@ -10,7 +10,7 @@ public class CubicBezierEntity : BaseEntity, IGeometricEntity
     {
     }
 
-    public CubicBezierEntity(PointDouble location, PointDouble control1, PointDouble control2, PointDouble endLocation, ITransform transform, Guid? id = null)
+    public CubicBezierEntity(PointDouble location, PointDouble control1, PointDouble control2, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.CubicBezier, id, location, transform)
     {
         EndLocation = endLocation;

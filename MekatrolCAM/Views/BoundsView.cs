@@ -56,7 +56,7 @@ public sealed class BoundsView : Control
 
         foreach (var e in Entities)
         {
-            var (min, max) = e.GetMinMax(); // assumes your impl returns axis-aligned bounds
+            var (min, max) = e.GetMinMax();
             var rect = new Rect(
                 x: min.X * Scale,
                 y: min.Y * Scale,

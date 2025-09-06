@@ -1,6 +1,7 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class PolygonEntity : PolybaseEntity
+internal class PolygonEntity(IReadOnlyList<PointDouble> points, ITransform transform, Guid? id = null)
+    : PolybaseEntity(GeometricEntityType.Polygon, points, transform, id)
 {
     /// <summary>
     /// This empty constructor is used by the serializer
@@ -11,11 +12,6 @@ internal class PolygonEntity : PolybaseEntity
     }
 
     public PolygonEntity(ITransform transform, Guid? id = null) : this([], transform, id)
-    {
-    }
-
-    public PolygonEntity(IReadOnlyList<PointDouble> points, ITransform transform, Guid? id = null)
-        : base(GeometricEntityType.Polygon, points, transform, id)
     {
     }
 }

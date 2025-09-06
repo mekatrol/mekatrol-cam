@@ -1,4 +1,5 @@
-﻿using Mekatrol.CAM.Core.Geometry;
+﻿using Avalonia.Media;
+using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
 using Microsoft.Extensions.Logging;
@@ -22,8 +23,8 @@ internal class SvgParser : ISvgParser
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        var fontFamily = GraphicsExtensions.BestFontFamily(GraphicsExtensions.DefaultFontFamilyName);
-        _currentFont = new FontDescription(fontFamily.Name, 30, FontStyle.Regular);
+        var fontFamily = RenderExtensions.BestFontFamily(RenderExtensions.DefaultFontFamilyName);
+        _currentFont = new FontDescription(fontFamily.Name, 30, FontStyle.Normal, FontWeight.Normal);
     }
 
     public IReadOnlyList<IGeometricEntity> Parse(StreamReader stream, bool translateToZero = false)
@@ -204,10 +205,9 @@ internal class SvgParser : ISvgParser
             // rx is null, so default to ry
             rx = ry;
         }
-        else if (ry == null)
+        else             // ry is null, so default to rx
         {
-            // ry is null, so default to rx
-            ry = rx;
+            ry ??= rx;
         }
 
         return new RectangleEntity(x, y, w, h, rx ?? 0.0, ry ?? 0.0, ParseTransformAttribute(element));
@@ -280,7 +280,7 @@ internal class SvgParser : ISvgParser
         var lineInfo = (IXmlLineInfo)element;
         var exception = new XmlException("Invalid polygon points value.", null, lineInfo.LineNumber, lineInfo.LinePosition);
 
-        var points = new List<PointDouble>();
+        List<PointDouble> points = [];
 
         var offset = 0;
         var isPoint = true;
@@ -397,7 +397,7 @@ internal class SvgParser : ISvgParser
             throw exception;
         }
 
-        return new PolylineEntity(points, ParseTransformAttribute(element));
+        return new PolylineEntity(points.AsReadOnly<PointDouble>(), ParseTransformAttribute(element));
     }
 
     private static IGeometricEntity ParsePathElement(XElement element)
@@ -504,7 +504,7 @@ internal class SvgParser : ISvgParser
                         }
 
                         // Create text child
-                        var textEntity = new TextEntity(x, y, text.Trim(), font, textAlign, new Transform());
+                        var textEntity = new TextEntity(x, y, text.Trim(), font, textAlign, new Geometry.Entities.Transform());
                         childText.Add(textEntity);
                         var spaceSize = GeometryUtils.MeasureText("I", textEntity.Font, textAlign, 0, 0, Matrix3.Identity);
                         x += textEntity.Boundary.Size.X + spaceSize.X;
@@ -551,7 +551,7 @@ internal class SvgParser : ISvgParser
             }
         }
 
-        var entityPath = new PathEntity(xElement, yElement, childText, false, new Transform());
+        var entityPath = new PathEntity(xElement, yElement, childText, false, new Geometry.Entities.Transform());
         return entityPath;
     }
 
@@ -597,14 +597,14 @@ internal class SvgParser : ISvgParser
         _cssClasses = CssParser.Parse(css);
     }
 
-    private static ITransform ParseTransformAttribute(XElement element)
+    private static Geometry.Entities.ITransform ParseTransformAttribute(XElement element)
     {
         var transformAttr = GetAttributeValue(element, "transform")?.Trim();
-        var transform = new Transform();
+        var transform = new Geometry.Entities.Transform();
 
         if (string.IsNullOrWhiteSpace(transformAttr))
         {
-            return new Transform();
+            return new Geometry.Entities.Transform();
         }
 
         var transformDefinitions = new List<string>();

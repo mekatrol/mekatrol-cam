@@ -1,5 +1,6 @@
 ﻿using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
+using SkiaSharp;
 using System.Runtime.CompilerServices;
 
 namespace Mekatrol.CAM.Core.Render;
@@ -143,7 +144,7 @@ internal static class GeometryUtils
             // F.6.6 Correction of out-of-range radii
             // Step 1: Ensure radii are non-zero
             // If rx = 0 or ry = 0, then treat this as a straight line from (x1, y1) to (x2, y2) and stop.
-            return new LineEntity(x1, y1, x2, y2, new Transform());
+            return new LineEntity(x1, y1, x2, y2, new Geometry.Entities.Transform());
         }
 
         // F.6.6 Correction of out-of-range radii
@@ -306,7 +307,7 @@ internal static class GeometryUtils
             startAngle, // Radii
             sweepAngle,
             ellipseRotation,
-            new Transform());
+            new Geometry.Entities.Transform());
 
         return arc;
     }
@@ -427,59 +428,132 @@ internal static class GeometryUtils
         return (points, minX, minY, maxX, maxY);
     }
 
-    internal static (IList<PointDouble> Points, IList<PointType> LineTypes) PlotText(
+    public static (List<PointDouble> points, List<PointType> types) PlotText(
         string text,
         FontDescription fontDescription,
         StringAlignment alignment,
-        double x,
-        double y,
+        float x,
+        float y,
         Matrix3 transform)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return (new List<PointDouble>(), new List<PointType>());
-        }
+        _ = alignment; // TODO: reintroduce
+        _ = transform; // TODO: reintroduce
 
-        var bestFont = GraphicsExtensions.BestFontFamily(fontDescription.FamilyName);
+        using var tf = SKTypeface.FromFamilyName(
+            fontDescription.FamilyName,
+            SKFontStyleWeight.Normal,
+            SKFontStyleWidth.Normal,
+            SKFontStyleSlant.Upright);
 
-        // Create font we want to use to render
-        var fontSize = GraphicsExtensions.ConvertMMToPixels(fontDescription.Size);
-        using Font font = new(bestFont.Name, fontSize, fontDescription.Style);
-        StringFormat stringFormat = new()
+        using var paint = new SKPaint
         {
-            Alignment = alignment,
-            LineAlignment = StringAlignment.Center,
-            FormatFlags = StringFormatFlags.NoWrap
+            Typeface = tf,
+            TextSize = fontDescription.Size,
+            IsAntialias = true,
         };
 
-        // Generate the graphics path
-        using GraphicsPath path = new();
-        path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new PointF((float)x, (float)y), stringFormat);
-        if (path.PathPoints == null || path.PathPoints.Length == 0)
+        using var skPath = paint.GetTextPath(text, x, y);
+        if (skPath == null || skPath.IsEmpty)
         {
-            return (new List<PointDouble>(), new List<PointType>());
+            return ([], []);
         }
 
-        var points = path.PathPoints.Select(p => new PointDouble(p.X, p.Y)).ToList();
+        var pts = new List<PointDouble>();
+        var types = new List<PointType>();
 
-        var (min, max) = GetMinMax(points);
-        var yAdj = (max.Y - min.Y) / 2;
+        var rawPts = new SKPoint[4];
+        using var it = skPath.CreateRawIterator();
 
-        for (var i = 0; i < path.PathPoints.Length; i++)
+        SKPathVerb v;
+        var figureStartIndex = -1;
+
+        while ((v = it.Next(rawPts)) != SKPathVerb.Done)
         {
-            var point = points[i];
-            points[i] = new PointDouble(point.X, point.Y - yAdj) * transform;
+            switch (v)
+            {
+                case SKPathVerb.Move:
+                    {
+                        var p = rawPts[0];
+                        pts.Add(new PointDouble(p.X, p.Y));
+                        types.Add(PointType.StartOfFigure);
+                        figureStartIndex = pts.Count - 1;
+                        break;
+                    }
+                case SKPathVerb.Line:
+                    {
+                        var p = rawPts[1];
+                        pts.Add(new PointDouble(p.X, p.Y));
+                        types.Add(PointType.LinePoint);
+                        break;
+                    }
+                case SKPathVerb.Quad:
+                    {
+                        // Skia quad gives: [p0, p1(control), p2(end)]
+                        // Represent like GraphicsPath: control then end, both BezierPoint
+                        var c = rawPts[1];
+                        var e = rawPts[2];
+                        pts.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
+                        pts.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        break;
+                    }
+                case SKPathVerb.Conic:
+                    {
+                        // Treat as quad. Weight is in it.ConicWeight, but SkiaSharp RawIterator exposes it separately.
+                        var c = rawPts[1];
+                        var e = rawPts[2];
+                        pts.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
+                        pts.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        break;
+                    }
+                case SKPathVerb.Cubic:
+                    {
+                        // Skia cubic: [p0, c1, c2, e]
+                        var c1 = rawPts[1];
+                        var c2 = rawPts[2];
+                        var e = rawPts[3];
+                        pts.Add(new PointDouble(c1.X, c1.Y)); types.Add(PointType.BezierPoint);
+                        pts.Add(new PointDouble(c2.X, c2.Y)); types.Add(PointType.BezierPoint);
+                        pts.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        break;
+                    }
+                case SKPathVerb.Close:
+                    {
+                        // Mark last point as close for this figure
+                        if (figureStartIndex >= 0 && pts.Count > figureStartIndex)
+                        {
+                            // emulate GraphicsPath: set ClosePoint flag on the last point
+                            types[types.Count - 1] |= PointType.ClosePoint;
+                        }
+                        figureStartIndex = -1;
+                        break;
+                    }
+            }
         }
 
-        return (points, path.PathTypes.Cast<PointType>().ToList());
+        if (pts.Count == 0)
+        {
+            return ([], []);
+        }
+
+        // Center vertically like your original code
+        var minY = pts.Min(p => p.Y);
+        var maxY = pts.Max(p => p.Y);
+        var yAdj = (maxY - minY) / 2.0;
+
+        for (var i = 0; i < pts.Count; i++)
+        {
+            pts[i] = new PointDouble(pts[i].X, pts[i].Y - yAdj);
+        }
+
+        return (pts, types);
     }
 
     internal static PointDouble MeasureText(
         string text,
         FontDescription fontDescription,
         StringAlignment alignment,
-        double x,
-        double y,
+        float x,
+        float y,
         Matrix3 transform)
     {
         var (points, _) = PlotText(text, fontDescription, alignment, x, y, transform);
@@ -574,7 +648,7 @@ internal static class GeometryUtils
         var control1 = bezier.Location + twoThirds * (bezier.Control - bezier.Location);
         var control2 = bezier.EndLocation + twoThirds * (bezier.Control - bezier.EndLocation);
 
-        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new Transform());
+        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new Geometry.Entities.Transform());
     }
 
     internal static PointInPolgygonResult PointInPolygon(PointDouble point, IList<PointDouble[]> polygons)

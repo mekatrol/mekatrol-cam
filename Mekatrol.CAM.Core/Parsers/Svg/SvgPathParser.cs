@@ -277,10 +277,7 @@ internal class SvgPathParser
             SkipWhitespaceAndComma();
 
             var y = GetDouble();
-            if (y == null)
-            {
-                y = 0;
-            }
+            y ??= 0;
 
             // If relative, add current location X,Y
             if (command == SvgPathCommand.l)
@@ -305,10 +302,7 @@ internal class SvgPathParser
     private IGeometricEntity ParseHorizontalLine(SvgPathCommand command)
     {
         var x = GetDouble();
-        if (x == null)
-        {
-            x = 0;
-        }
+        x ??= 0;
 
         // If relative, add current location X
         if (command == SvgPathCommand.h)
@@ -329,10 +323,7 @@ internal class SvgPathParser
     private IGeometricEntity ParseVerticalLine(SvgPathCommand command)
     {
         var y = GetDouble();
-        if (y == null)
-        {
-            y = 0;
-        }
+        y ??= 0;
 
         // If relative, add current location Y
         if (command == SvgPathCommand.v)

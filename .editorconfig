@@ -336,6 +336,12 @@ dotnet_diagnostic.IDE0017.severity = error
 # IDE0028: Collection initialization can be simplified
 dotnet_diagnostic.IDE0028.severity = error
 
+# IDE0054 Use compound assignment
+dotnet_diagnostic.IDE0054.severity = error
+
+# IDE0074 Use compound assignment
+dotnet_diagnostic.IDE0074.severity = error
+
 # IDE0300: Collection initialization can be simplified
 dotnet_diagnostic.IDE0300.severity = error
 

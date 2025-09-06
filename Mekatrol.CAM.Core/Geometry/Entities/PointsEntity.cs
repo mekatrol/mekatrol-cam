@@ -1,4 +1,5 @@
-﻿using Mekatrol.CAM.Core.Render;
+﻿using Mekatrol.CAM.Core.Clipping;
+using Mekatrol.CAM.Core.Render;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 

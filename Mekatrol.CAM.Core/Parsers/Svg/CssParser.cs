@@ -1,4 +1,5 @@
-﻿using Mekatrol.CAM.Core.Geometry.Entities;
+﻿using Avalonia.Media;
+using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
 using System.Text.RegularExpressions;
 
@@ -12,7 +13,7 @@ internal class CssParser
     private const string Font = "font:";
     private const string FontFamily = "font-family:";
     private const string FontSize = "font-size:";
-    private const string FontWeight = "font-weight:";
+    private const string FontWeightAttr = "font-weight:";
 
     public static IDictionary<string, CssClass> Parse(string css)
     {
@@ -51,27 +52,21 @@ internal class CssParser
 
                 if (line.StartsWith(FontFamily))
                 {
-                    font ??= new(GraphicsExtensions.DefaultFontFamilyName, 30, FontStyle.Regular);
+                    font ??= new(RenderExtensions.DefaultFontFamilyName, 30, FontStyle.Normal, FontWeight.Normal);
 
                     ExtractFontFamily(line, font);
                 }
 
                 if (line.StartsWith(FontSize))
                 {
-                    if (font == null)
-                    {
-                        font = new(GraphicsExtensions.DefaultFontFamilyName, 30, FontStyle.Regular);
-                    }
+                    font ??= new(RenderExtensions.DefaultFontFamilyName, 30, FontStyle.Normal, FontWeight.Normal);
 
                     ExtractFontSize(line, font);
                 }
 
-                if (line.StartsWith(FontWeight))
+                if (line.StartsWith(FontWeightAttr))
                 {
-                    if (font == null)
-                    {
-                        font = new(GraphicsExtensions.DefaultFontFamilyName, 30, FontStyle.Regular);
-                    }
+                    font ??= new(RenderExtensions.DefaultFontFamilyName, 30, FontStyle.Normal, FontWeight.Normal);
 
                     ExtractFontWeight(line, font);
                 }
@@ -104,13 +99,13 @@ internal class CssParser
                 // Default to pixels
                 sizeUnit = "px";
             }
-            font.Size = GraphicsExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
+            font.Size = RenderExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
         }
     }
 
     public static void ExtractFontWeight(string line, FontDescription font)
     {
-        line = line.Remove(line.IndexOf(FontWeight), FontWeight.Length).Trim();
+        line = line.Remove(line.IndexOf(FontWeightAttr), FontWeightAttr.Length).Trim();
         if (line.Trim().Contains("italic"))
         {
             font.Style |= FontStyle.Italic;
@@ -118,7 +113,7 @@ internal class CssParser
 
         if (line.Trim().Contains("bold"))
         {
-            font.Style |= FontStyle.Bold;
+            font.Weight |= FontWeight.Bold;
         }
     }
 
@@ -165,8 +160,9 @@ internal class CssParser
          **********************************************************************************/
 
         // Set our defaults
-        var fontStyle = FontStyle.Regular;
-        var fontSize = GraphicsExtensions.DefaultFontSize;
+        var fontStyle = FontStyle.Normal;
+        var fontWeight = FontWeight.Normal;
+        var fontSize = RenderExtensions.DefaultFontSize;
 
         var tokens = new List<string>();
         while ((token = NextToken(ref fontDescription)) != string.Empty)
@@ -188,7 +184,7 @@ internal class CssParser
 
             if (token == "bold")
             {
-                fontStyle |= FontStyle.Bold;
+                fontWeight = FontWeight.Bold;
             }
 
             else if (token == "italic")
@@ -201,15 +197,15 @@ internal class CssParser
             {
                 fontSize = float.Parse(match.Groups[1].Value);
                 var sizeUnit = match.Groups[2].Value;
-                fontSize = GraphicsExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
+                fontSize = RenderExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
                 break;
             }
         }
 
         // Theoretically the font family token should be the second last token (last being ';' token)
-        var fontFamily = GraphicsExtensions.BestFontFamily(tokens[^2]);
+        var fontFamily = RenderExtensions.BestFontFamily(tokens[^2]);
 
-        return new FontDescription(fontFamily.Name, fontSize, fontStyle);
+        return new FontDescription(fontFamily.Name, fontSize, fontStyle, fontWeight);
     }
 
     private static string NextToken(ref string value)

@@ -442,16 +442,16 @@ public class SvgParser : ISvgParser
         var x = xElement;
         var y = yElement;
 
-        var textAlign = StringAlignment.Near;
+        var textAlign = TextAlignment.Left;
         var textAnchor = GetAttributeValue(element, "text-anchor");
         if (textAnchor != null)
         {
             textAlign = textAnchor.ToLower() switch
             {
-                "middle" => StringAlignment.Center,
-                "end" => StringAlignment.Far,
+                "middle" => TextAlignment.Center,
+                "end" => TextAlignment.Right,
                 // "start"
-                _ => StringAlignment.Near,
+                _ => TextAlignment.Left,
             };
         }
 

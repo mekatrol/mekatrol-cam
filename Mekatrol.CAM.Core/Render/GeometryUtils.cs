@@ -1,4 +1,5 @@
-﻿using Mekatrol.CAM.Core.Geometry;
+﻿using Avalonia.Media;
+using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
 using SkiaSharp;
 using System.Runtime.CompilerServices;
@@ -431,14 +432,12 @@ internal static class GeometryUtils
     public static (List<PointDouble> points, List<PointType> types) PlotText(
         string text,
         FontDescription fontDescription,
-        StringAlignment alignment,
-        float x,
-        float y,
-        Matrix3 transform)
+        TextAlignment alignment,   // horizontal alignment of the whole run
+        float x,                   // anchor X (before alignment shift)
+        float y,                   // baseline Y
+        Matrix3 transform)         // model transform applied to each output point
     {
-        _ = alignment; // TODO: reintroduce
-        _ = transform; // TODO: reintroduce
-
+        // 1) Build font + paint
         using var tf = SKTypeface.FromFamilyName(
             fontDescription.FamilyName,
             SKFontStyleWeight.Normal,
@@ -448,110 +447,131 @@ internal static class GeometryUtils
         using var paint = new SKPaint
         {
             Typeface = tf,
-            TextSize = fontDescription.Size,
+            TextSize = fontDescription.Size, // units = pixels (DIPs≈px at 96 DPI)
             IsAntialias = true,
+            // Keep Left align; we do our own pre-shift below for deterministic geometry.
+            TextAlign = SKTextAlign.Left
         };
 
-        using var skPath = paint.GetTextPath(text, x, y);
-        if (skPath == null || skPath.IsEmpty)
+        // 2) Horizontal alignment: shift X by the run advance
+        //    - Center: anchor sits at run center
+        //    - Right:  anchor sits at run right edge
+        var advance = paint.MeasureText(text); // glyph advance width (no shaping)
+        var xAligned = alignment switch
         {
-            return ([], []);
+            TextAlignment.Center => x - advance / 2f,
+            TextAlignment.Right => x - advance,
+            _ => x // Left/Justify
+        };
+
+        // 3) Build vector outlines for the text at (xAligned, y) baseline
+        using var path = paint.GetTextPath(text, xAligned, y);
+        if (path == null || path.IsEmpty)
+        {
+            return (new List<PointDouble>(), new List<PointType>());
         }
 
-        var pts = new List<PointDouble>();
+        // 4) Decompose SKPath -> point/type lists compatible with your geometry pipeline
+        var points = new List<PointDouble>();
         var types = new List<PointType>();
 
         var rawPts = new SKPoint[4];
-        using var it = skPath.CreateRawIterator();
+        using var it = path.CreateRawIterator();
 
-        SKPathVerb v;
+        SKPathVerb verb;
         var figureStartIndex = -1;
 
-        while ((v = it.Next(rawPts)) != SKPathVerb.Done)
+        while ((verb = it.Next(rawPts)) != SKPathVerb.Done)
         {
-            switch (v)
+            switch (verb)
             {
                 case SKPathVerb.Move:
                     {
+                        // Start of a new contour. rawPts[0] = move target
                         var p = rawPts[0];
-                        pts.Add(new PointDouble(p.X, p.Y));
+                        points.Add(new PointDouble(p.X, p.Y));
                         types.Add(PointType.StartOfFigure);
-                        figureStartIndex = pts.Count - 1;
+                        figureStartIndex = points.Count - 1;
                         break;
                     }
                 case SKPathVerb.Line:
                     {
+                        // Line segment. rawPts[1] = line end
                         var p = rawPts[1];
-                        pts.Add(new PointDouble(p.X, p.Y));
+                        points.Add(new PointDouble(p.X, p.Y));
                         types.Add(PointType.LinePoint);
                         break;
                     }
                 case SKPathVerb.Quad:
                     {
-                        // Skia quad gives: [p0, p1(control), p2(end)]
-                        // Represent like GraphicsPath: control then end, both BezierPoint
+                        // Quadratic Bézier. rawPts: [p0, c, e]
+                        // Emit control then end as BezierPoint like System.Drawing.GraphicsPath does.
                         var c = rawPts[1];
                         var e = rawPts[2];
-                        pts.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
-                        pts.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
                         break;
                     }
                 case SKPathVerb.Conic:
                     {
-                        // Treat as quad. Weight is in it.ConicWeight, but SkiaSharp RawIterator exposes it separately.
+                        // Conic (weighted quadratic). Treat as quadratic control+end.
+                        // If you need exact conic handling, read it.ConicWeight and convert to quad/cubic.
                         var c = rawPts[1];
                         var e = rawPts[2];
-                        pts.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
-                        pts.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
                         break;
                     }
                 case SKPathVerb.Cubic:
                     {
-                        // Skia cubic: [p0, c1, c2, e]
+                        // Cubic Bézier. rawPts: [p0, c1, c2, e]
                         var c1 = rawPts[1];
                         var c2 = rawPts[2];
                         var e = rawPts[3];
-                        pts.Add(new PointDouble(c1.X, c1.Y)); types.Add(PointType.BezierPoint);
-                        pts.Add(new PointDouble(c2.X, c2.Y)); types.Add(PointType.BezierPoint);
-                        pts.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c1.X, c1.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c2.X, c2.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
                         break;
                     }
                 case SKPathVerb.Close:
                     {
-                        // Mark last point as close for this figure
-                        if (figureStartIndex >= 0 && pts.Count > figureStartIndex)
+                        // Close current contour. Mark last point with ClosePoint flag.
+                        if (figureStartIndex >= 0 && points.Count > figureStartIndex)
                         {
-                            // emulate GraphicsPath: set ClosePoint flag on the last point
                             types[^1] |= PointType.ClosePoint;
                         }
+
                         figureStartIndex = -1;
                         break;
                     }
             }
         }
 
-        if (pts.Count == 0)
+        if (points.Count == 0)
         {
-            return ([], []);
+            return (new List<PointDouble>(), new List<PointType>());
         }
 
-        // Center vertically like your original code
-        var minY = pts.Min(p => p.Y);
-        var maxY = pts.Max(p => p.Y);
-        var yAdj = (maxY - minY) / 2.0;
+        // 5) Optional vertical centering around the local bbox (matches your prior behavior).
+        //    If you prefer true typographic centering, use SKFontMetrics instead.
+        var minY = points.Min(p => p.Y);
+        var maxY = points.Max(p => p.Y);
+        var yCenterOffset = (maxY - minY) / 2.0;
 
-        for (var i = 0; i < pts.Count; i++)
+        for (var i = 0; i < points.Count; i++)
         {
-            pts[i] = new PointDouble(pts[i].X, pts[i].Y - yAdj);
+            // Apply vertical centering, then the caller-supplied transform.
+            var centered = new PointDouble(points[i].X, points[i].Y - yCenterOffset);
+            points[i] = centered * transform;
         }
 
-        return (pts, types);
+        return (points, types);
     }
 
     internal static PointDouble MeasureText(
         string text,
         FontDescription fontDescription,
-        StringAlignment alignment,
+        TextAlignment alignment,
         float x,
         float y,
         Matrix3 transform)

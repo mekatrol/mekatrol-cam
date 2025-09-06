@@ -1,4 +1,5 @@
-﻿using Mekatrol.CAM.Core.Render;
+﻿using Avalonia.Media;
+using Mekatrol.CAM.Core.Render;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
@@ -8,7 +9,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
     /// This empty constructor is used by the serializer
     /// </summary>
     public TextEntity()
-        : this(0, 0, string.Empty, FontDescription.Default, StringAlignment.Near, new GeometryTransform())
+        : this(0, 0, string.Empty, FontDescription.Default, TextAlignment.Left, new GeometryTransform())
     {
 
     }
@@ -18,7 +19,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
         double y,
         string value,
         FontDescription font,
-        StringAlignment alignment,
+        TextAlignment alignment,
         ITransform transform,
         Guid? id = null)
         : base(GeometricEntityType.Text, id, new PointDouble(x, y), transform)
@@ -46,7 +47,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
 
     public FontDescription Font { get; set; }
 
-    public StringAlignment Alignment { get; }
+    public TextAlignment Alignment { get; }
 
     public IList<PointType> PointTypes { get; set; }
 

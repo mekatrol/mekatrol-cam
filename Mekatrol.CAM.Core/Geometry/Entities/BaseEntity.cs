@@ -62,11 +62,11 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
 
     public virtual void TransformBy(Matrix3 m)
     {
-        var mTransformed = Transform.GetMatrix() * m;
+        var transform = Transform.GetMatrix() * m;
 
-        Transform.Scale = mTransformed.GetScale();
-        Transform.Rotate = new GeometryRotate(GeometryUtils.RadiansToDegrees(mTransformed.GetRotation()), 0, 0);
-        Transform.Translate = mTransformed.GetTranslation();
+        Transform.Scale = transform.GetScale();
+        Transform.Rotate = new GeometryRotate(GeometryUtils.RadiansToDegrees(transform.GetRotation()), 0, 0);
+        Transform.Translate = transform.GetTranslation();
 
         Location *= m;
         TransformGeometry(m);

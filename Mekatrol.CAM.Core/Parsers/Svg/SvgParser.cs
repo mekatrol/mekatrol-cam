@@ -772,6 +772,26 @@ public class SvgParser : ISvgParser
         return doubleValues.Take(expectedArrayLength).ToArray();
     }
 
+    // SVG matrix(a, b, c, d, e, f) represents the 3x3 affine matrix:
+    // [ a  c  e ]
+    // [ b  d  f ]
+    // [ 0  0  1 ]
+    //
+    // Applied to a column vector [x y 1]^T:
+    //   x' = a*x + c*y + e
+    //   y' = b*x + d*y + f
+    //
+    // Intuition:
+    //   a,d : primary scale and rotation terms (cosθ*scale, etc.)
+    //   b,c : cross terms: rotation and shear
+    //   e,f : translation in X and Y
+    //
+    // Notes:
+    //   - Pure scale(sx, sy): a=sx, d=sy, b=c=0, e=f=0
+    //   - Pure rotate(θ):    a=cosθ, c=-sinθ, b=sinθ, d=cosθ
+    //   - Pure shear(shx,shy): c=shx, b=shy
+    //   - Pure translate(tx,ty): e=tx, f=ty
+    //   - Negative scales flip axes.
     private static Matrix3 ParseMatrix(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -779,34 +799,52 @@ public class SvgParser : ISvgParser
             return Matrix3.Identity;
         }
 
-        var values = ParseBracketValues(value, false, 0.0, 6);
+        // Parse a,b,c,d,e,f from "matrix(a,b,c,d,e,f)"
+        var values = ParseBracketValues(value, copyRight: false, defaultValue: 0.0, expectedArrayLength: 6);
+
+        // Matrix3 expects row-major storage with layout:
+        // [ m0 m1 m2 ]
+        // [ m3 m4 m5 ]
+        // [ m6 m7 m8 ]
+        //
+        // 2D block is:
+        // [ a b c ]
+        // [ d e f ]
+        // with bottom row [0 0 1].
+        //
+        // Therefore map SVG → internal:
+        // SVG [ a  c  e ]      internal row 0: [ a  c  e ] -> m[0], m[1], m[2]
+        //     [ b  d  f ]  →   internal row 1: [ b  d  f ] -> m[3], m[4], m[5]
+        //     [ 0  0  1 ]      internal row 2: [ 0  0  1 ] -> m[6], m[7], m[8]
 
         var m = new double[9];
-        // Transpose cols / array
-        // SVG has structure:
-        // [a c e]
-        // [b d f]
 
-        // But our matrix structure is:
-        // [a b c]
-        // [d e f]
+        // m[0] = a : scales X, and contributes cosθ for rotation around origin.
+        m[0] = values[0]; // a
 
-        m[0] = values[0];
-        m[1] = values[2];
-        m[2] = values[4];
-        m[3] = values[1];
-        m[4] = values[3];
-        m[5] = values[5];
+        // m[1] = c : mixes Y into X; rotation (−sinθ) and X-shear component.
+        m[1] = values[2]; // c
 
-        // Add bottom row
-        m[6] = 0;
-        m[7] = 0;
-        m[8] = 1;
+        // m[2] = e : translation in X (moves all points horizontally).
+        m[2] = values[4]; // e
 
-        var matrix = new Matrix3(m);
+        // m[3] = b : mixes X into Y; rotation (sinθ) and Y-shear component.
+        m[3] = values[1]; // b
 
-        return matrix;
+        // m[4] = d : scales Y, and contributes cosθ for rotation around origin.
+        m[4] = values[3]; // d
+
+        // m[5] = f : translation in Y (moves all points vertically).
+        m[5] = values[5]; // f
+
+        // Homogeneous bottom row for affine transforms.
+        m[6] = 0; // no projective terms
+        m[7] = 0; // no projective terms
+        m[8] = 1; // homogeneous scale
+
+        return new Matrix3(m);
     }
+
 
     private static PointDouble ParseTranslate(string? value)
     {

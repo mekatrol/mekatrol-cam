@@ -23,10 +23,10 @@ public sealed class GeometryView : Control
         set { SetAndRaise(EntitiesProperty, ref _entities, value); InvalidateVisual(); }
     }
 
-    public static readonly StyledProperty<double> ScaleProperty =
-        AvaloniaProperty.Register<GeometryView, double>(nameof(Scale), 1.0);
+    public static readonly StyledProperty<float> ScaleProperty =
+        AvaloniaProperty.Register<GeometryView, float>(nameof(Scale), 1.0f);
 
-    public double Scale
+    public float Scale
     {
         get => GetValue(ScaleProperty);
         set => SetValue(ScaleProperty, value);
@@ -55,17 +55,18 @@ public sealed class GeometryView : Control
         var i = 0;
         foreach (var entity in Entities)
         {
-            var (min, max) = entity.GetMinMax();
+            var bounds = entity.Boundary;
+
             var rect = new Rect(
-                x: min.X * Scale,
-                y: min.Y * Scale,
-                width: (max.X - min.X) * Scale,
-                height: (max.Y - min.Y) * Scale);
+                x: bounds.Location.X * Scale,
+                y: bounds.Location.Y * Scale,
+                width: bounds.Size.X * Scale,
+                height: bounds.Size.Y * Scale);
 
             context.DrawRectangle(null, boundsPen, rect);
 
             var color = RenderColors.Palette[i++];
-            context.Draw(entity, color, 1.0f);
+            context.Draw(entity, color, Scale);
 
             if (i >= RenderColors.Palette.Length)
             {

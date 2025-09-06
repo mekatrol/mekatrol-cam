@@ -27,4 +27,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageReference Include="ReactiveUI" Version="21.0.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mekatrol.CAM.Core\Mekatrol.CAM.Core.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,285 @@
+﻿using Mekatrol.CAM.Core.Geometry.Entities;
+using Mekatrol.CAM.Core.Render;
+using System.Text.RegularExpressions;
+
+namespace Mekatrol.CAM.Core.Parsers.Svg;
+
+internal class CssParser
+{
+    private const string ClassNamePattern = @"\.-?([_a-zA-Z]+[_a-zA-Z0-9-]*)\s*\{(\s*.*\s*)}";
+    private const string FontSizePattern = @"([0-9]*\.{0,1}[0-9]+)([a-zA-Z%]*)(\/([0-9]*\.{0,1}[0-9]+)([a-zA-Z%]*)){0,1}";
+
+    private const string Font = "font:";
+    private const string FontFamily = "font-family:";
+    private const string FontSize = "font-size:";
+    private const string FontWeight = "font-weight:";
+
+    public static IDictionary<string, CssClass> Parse(string css)
+    {
+        var classes = new Dictionary<string, CssClass>(StringComparer.OrdinalIgnoreCase);
+
+        var matches = Regex.Matches(css, ClassNamePattern)
+            .Cast<Match>()
+            .Where(m => m.Success)
+            .ToList();
+
+        for (var i = 0; i < matches.Count; i++)
+        {
+            var match = matches[i];
+
+            var className = match.Groups[1].Value;
+            var classContent = match.Groups[2].Value;
+
+            var lines = classContent
+                .Split(['\r', '\n', ';'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .ToList();
+
+            FontDescription? font = null;
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith(Font))
+                {
+                    var extracted = ExtractFont(line);
+                    if (extracted != null)
+                    {
+                        font = extracted;
+                    }
+                }
+
+                if (line.StartsWith(FontFamily))
+                {
+                    font ??= new(GraphicsExtensions.DefaultFontFamilyName, 30, FontStyle.Regular);
+
+                    ExtractFontFamily(line, font);
+                }
+
+                if (line.StartsWith(FontSize))
+                {
+                    if (font == null)
+                    {
+                        font = new(GraphicsExtensions.DefaultFontFamilyName, 30, FontStyle.Regular);
+                    }
+
+                    ExtractFontSize(line, font);
+                }
+
+                if (line.StartsWith(FontWeight))
+                {
+                    if (font == null)
+                    {
+                        font = new(GraphicsExtensions.DefaultFontFamilyName, 30, FontStyle.Regular);
+                    }
+
+                    ExtractFontWeight(line, font);
+                }
+            }
+
+            classes[className] = new CssClass(className)
+            {
+                Font = font
+            };
+        }
+
+        return classes;
+    }
+
+    public static void ExtractFontFamily(string line, FontDescription font)
+    {
+        var family = line.Remove(line.IndexOf(FontFamily), FontFamily.Length).Trim();
+        font.FamilyName = family;
+    }
+
+    public static void ExtractFontSize(string line, FontDescription font)
+    {
+        var sizeMatch = Regex.Match(line, FontSizePattern);
+        if (sizeMatch.Success)
+        {
+            var fontSize = float.Parse(sizeMatch.Groups[1].Value);
+            var sizeUnit = sizeMatch.Groups[2].Value;
+            if (string.IsNullOrWhiteSpace(sizeUnit))
+            {
+                // Default to pixels
+                sizeUnit = "px";
+            }
+            font.Size = GraphicsExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
+        }
+    }
+
+    public static void ExtractFontWeight(string line, FontDescription font)
+    {
+        line = line.Remove(line.IndexOf(FontWeight), FontWeight.Length).Trim();
+        if (line.Trim().Contains("italic"))
+        {
+            font.Style |= FontStyle.Italic;
+        }
+
+        if (line.Trim().Contains("bold"))
+        {
+            font.Style |= FontStyle.Bold;
+        }
+    }
+
+    public static FontDescription? ExtractFont(string fontDescription)
+    {
+        if (string.IsNullOrWhiteSpace(fontDescription))
+        {
+            return null;
+        }
+
+        var token = NextToken(ref fontDescription);
+
+        // Make sure this is a font definition
+        if (token != "font:")
+        {
+            return null;
+        }
+
+        // Ref: https://developer.mozilla.org/en-US/docs/Web/CSS/font
+        /**************************************************************************************************
+         * The font property may be specified as either a single keyword, which will select a system font, 
+         * or as a shorthand for various font-related properties.
+         * If font is specified as a system keyword, it must be one of: 
+         *      caption, icon, menu, message-box, small-caption, status-bar.
+         * 
+         * If font is specified as a shorthand for several font-related properties, then:
+         * 1. it must include values for:
+         *      font-size
+         *      font-family
+         *
+         * 2. it may optionally include values for:
+         *      font-style
+         *      font-variant
+         *      font-weight
+         *      font-stretch
+         *      line-height
+         * 
+         * Rules:
+         *   1. font-style, font-variant and font-weight must precede font-size
+         *   2. font-variant may only specify the values defined in CSS 2.1, that is normal and small-caps
+         *   3. font-stretch may only be a single keyword value.
+         *   4. line-height must immediately follow font-size, preceded by "/", like this: "16px/3"
+         *   5. font-family must be the last value specified.
+         **********************************************************************************/
+
+        // Set our defaults
+        var fontStyle = FontStyle.Regular;
+        var fontSize = GraphicsExtensions.DefaultFontSize;
+
+        var tokens = new List<string>();
+        while ((token = NextToken(ref fontDescription)) != string.Empty)
+        {
+            tokens.Add(token);
+        }
+
+        // If tokens count < 3 (third being ';') then we ignore as it is not well formed
+        // or it is just a single reference to caption, icon, menu, message-box, small-caption, status-bar
+        // which we do not support
+        if (tokens.Count < 3 || tokens[^1] != ";")
+        {
+            return null;
+        }
+
+        for (var i = 0; i < tokens.Count - 2 /* Ignore ';' end token, and font family names token  */; i++)
+        {
+            token = tokens[i];
+
+            if (token == "bold")
+            {
+                fontStyle |= FontStyle.Bold;
+            }
+
+            else if (token == "italic")
+            {
+                fontStyle |= FontStyle.Italic;
+            }
+
+            var match = Regex.Match(token, FontSizePattern);
+            if (match.Success)
+            {
+                fontSize = float.Parse(match.Groups[1].Value);
+                var sizeUnit = match.Groups[2].Value;
+                fontSize = GraphicsExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
+                break;
+            }
+        }
+
+        // Theoretically the font family token should be the second last token (last being ';' token)
+        var fontFamily = GraphicsExtensions.BestFontFamily(tokens[^2]);
+
+        return new FontDescription(fontFamily.Name, fontSize, fontStyle);
+    }
+
+    private static string NextToken(ref string value)
+    {
+        // Clear any whitespace
+        value = value.Trim();
+
+        // Token created
+        var token = string.Empty;
+
+        var endQuote = '\0'; // '\0' means not currently in a quoted value
+
+        while (value.Length > 0)
+        {
+            // Get the next character
+            var ch = value[0];
+
+            // End of value?
+            if (ch == ';' && !string.IsNullOrWhiteSpace(token))
+            {
+                // Return the token that was in progress
+                return token;
+            }
+
+            // Remove the character
+            value = value[1..];
+
+            // End of value?
+            if (ch == ';')
+            {
+                // End of value
+                return ";";
+            }
+
+            // If we are not in a quote and a space is found then return the token
+            if (endQuote == '\0' && char.IsWhiteSpace(ch))
+            {
+                value = value.Trim();
+                return token;
+            }
+
+            // Add this char to the token
+            token += ch;
+
+            // A, open quote?
+            if ((ch == '"' || ch == '\'') && endQuote == '\0')
+            {
+                endQuote = ch;
+                continue;
+            }
+
+            // End of quote?
+            if (ch == endQuote)
+            {
+                value = value.Trim();
+                endQuote = '\0';
+
+                if (value.Length > 0 && value[0] == ',')
+                {
+                    token += ',';
+
+                    // Remove the comma character and trim
+                    value = value[1..].Trim();
+
+                    continue;
+                }
+                return token;
+            }
+        }
+
+        return string.Empty;
+    }
+}

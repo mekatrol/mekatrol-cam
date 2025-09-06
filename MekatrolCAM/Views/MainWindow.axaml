@@ -7,16 +7,13 @@
         Width="1000" Height="650"
         Title="MekatrolCAM"
         Background="{DynamicResource ThemeBackgroundBrush}">
-	<Window.DataContext>
-		<vm:MainWindowViewModel/>
-	</Window.DataContext>
 
 	<DockPanel>
 		<!-- Top menu -->
 		<Menu DockPanel.Dock="Top">
 			<MenuItem Header="_File">
 				<MenuItem Header="_New"/>
-				<MenuItem Header="_Open…"/>
+				<MenuItem Header="_Open…" Command="{Binding FileOpenCommand}"/>
 				<Separator/>
 				<MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
 			</MenuItem>

@@ -2,14 +2,17 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using MekatrolCAM.ViewModels;
 using MekatrolCAM.Views;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Linq;
 
 namespace MekatrolCAM;
 
 public partial class App : Application
 {
+    public static IServiceProvider Services => Program.AppHost.Services;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -22,16 +25,15 @@ public partial class App : Application
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
+
+            // Resolve MainWindow from DI so its constructor can take dependencies
+            desktop.MainWindow = Services.GetRequiredService<MainWindow>();
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void DisableAvaloniaDataAnnotationValidation()
+    private static void DisableAvaloniaDataAnnotationValidation()
     {
         // Get an array of plugins to remove
         var dataValidationPluginsToRemove =

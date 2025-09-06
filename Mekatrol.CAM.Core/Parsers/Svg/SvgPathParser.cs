@@ -5,19 +5,13 @@ using System.Text.RegularExpressions;
 
 namespace Mekatrol.CAM.Core.Parsers.Svg;
 
-internal class SvgPathParser
+internal class SvgPathParser(string data)
 {
-    private readonly string _data;
-    private int _index;
+    private readonly string _data = data;
+    private int _index = 0;
     private PointDouble? _startLocation;
     private PointDouble _currentLocation = new(0, 0);
     private readonly List<IGeometricEntity> _geometries = [];
-
-    public SvgPathParser(string data)
-    {
-        _data = data;
-        _index = 0;
-    }
 
     public (PointDouble startLocation, IList<IGeometricEntity> path, bool closed) Parse()
     {

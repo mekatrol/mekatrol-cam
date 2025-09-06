@@ -6,6 +6,12 @@ A set of CNC/CAM utilities built into a cross platform desktop.
 dotnet format --verbosity diagnostic
 ```
 
+## Remove local nuget packages and clean builds
+```bash
+dotnet nuget locals all --clear
+Remove-Item -Recurse -Force .\**\bin, .\**\obj
+```
+
 ## Build
 
 ```bash

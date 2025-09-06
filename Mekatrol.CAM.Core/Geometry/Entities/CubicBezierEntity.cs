@@ -1,6 +1,4 @@
-﻿using Mekatrol.CAM.Core.Render;
-
-namespace Mekatrol.CAM.Core.Geometry.Entities;
+﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
 public class CubicBezierEntity : BaseEntity, IGeometricEntity
 {

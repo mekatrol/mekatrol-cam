@@ -1,8 +1,9 @@
 ﻿using Mekatrol.CAM.Core.Geometry.Entities;
+using System.Diagnostics;
 
 namespace Mekatrol.CAM.Core.Geometry;
 
-internal class BezierSpline
+internal static class BezierSpline
 {
     private static readonly double[] Factorials;
 
@@ -18,7 +19,7 @@ internal class BezierSpline
 
     static BezierSpline()
     {
-        var stopwatch = new System.Diagnostics.Stopwatch();
+        var stopwatch = new Stopwatch();
         stopwatch.Start();
 
         const int numberOfFactorials = 200;
@@ -30,7 +31,7 @@ internal class BezierSpline
         }
 
         stopwatch.Stop();
-        System.Diagnostics.Debug.WriteLine(string.Format("Took {0} ms.", stopwatch.ElapsedMilliseconds));
+        Debug.WriteLine(string.Format("Took {0} ms.", stopwatch.ElapsedMilliseconds));
     }
 
     private static double Ni(int n, int i)
@@ -84,6 +85,8 @@ internal class BezierSpline
         // Uniform step so that the last sample hits t≈1.0.
         var step = 1.0 / (pointCount - 1);
 
+        var n = controlPoints.Count - 1;
+
         for (var i1 = 0; i1 != pointCount; i1++)
         {
             // Clamp final sample to exactly t=1 to avoid tiny FP error near 1.0.
@@ -93,20 +96,17 @@ internal class BezierSpline
             }
 
             // Accumulator for the current point P(t)
-            calculatedPoints[outputIndex] = new PointDouble(0, 0);
+            var acc = new PointDouble(0, 0);
 
             // Sum_i [ B_i^n(t) * P_i ]
             // where B_i^n(t) = C(n,i) * t^i * (1-t)^(n-i)
-            var jcount = 0; // tracks control point index (same as 'i'; kept to match original flow)
-
-            for (var i = 0; i != controlPoints.Count; i++)
+            for (var i = 0; i < controlPoints.Count; i++)
             {
-                var basis = Bernstein(controlPoints.Count - 1, i, t); // B_i^n(t)
-                calculatedPoints[outputIndex] = calculatedPoints[outputIndex] + (basis * controlPoints[jcount]);
-                jcount++;
+                var basis = Bernstein(n, i, t); // B_i^n(t)
+                acc += (basis * controlPoints[i]);
             }
 
-            outputIndex++;
+            calculatedPoints[outputIndex++] = acc;
             t += step;
         }
 
@@ -132,28 +132,23 @@ internal class BezierSpline
         var ax = p3.X - p0.X - cx - bx;
         var ay = p3.Y - p0.Y - cy - by;
 
-        // Precompute powers
-        var t2 = t * t;
-        var t3 = t2 * t;
-
         // Evaluate the cubic polynomial separately for X and Y
-        var x = (ax * t3) + (bx * t2) + (cx * t) + p0.X;
-        var y = (ay * t3) + (by * t2) + (cy * t) + p0.Y;
-
         // Note: equivalent Horner form is slightly cheaper:
         // x = ((ax * t + bx) * t + cx) * t + p0.X;  same for y.
+        var x = ((ax * t + bx) * t + cx) * t + p0.X;
+        var y = ((ay * t + by) * t + cy) * t + p0.Y;
 
         return new PointDouble(x, y);
     }
 
-    public static IList<PointDouble> PlotCubicBezier(CubicBezierEntity bezier)
+    public static IList<PointDouble> PlotCubicBezier(CubicBezierEntity bezier, double step = 0.01)
     {
         var points = new List<PointDouble>();
 
         // Sample the cubic Bézier at uniform parameter steps.
-        // t ∈ [0,1] with Δt = 0.01. This is simple uniform-in-t sampling
+        // t ∈ [0,1] with Δt = step. This is simple uniform-in-t sampling
         // (not arc-length uniform), good for quick plotting and bounds.
-        for (float t = 0; t <= 1.0f; t += 0.01f)
+        for (double t = 0; t <= 1.0; t += step)
         {
             // Evaluate P(t) using control points:
             // p0 = bezier.Location, p1 = bezier.Control1,
@@ -166,6 +161,11 @@ internal class BezierSpline
         // - Floating-point stepping may skip the exact t=1 sample.
         //   If you must guarantee the last point equals p3, append it explicitly.
         // - For higher curvature fidelity, reduce the step or use adaptive sampling.
+
+        if (points.Count == 0 || points[^1].X != bezier.EndLocation.X || points[^1].Y != bezier.EndLocation.Y)
+        {
+            points.Add(bezier.EndLocation);
+        }
 
         return points;
     }
@@ -246,7 +246,7 @@ internal class BezierSpline
         // Derivatives:
         // x'(t) = 3ax t^2 + 2bx t + cx
         // y'(t) = 3ay t^2 + 2by t + cy
-        static void Roots01(double A, double B, double C, HashSet<double> acc)
+        static void Roots01(double A, double B, double C, List<double> acc)
         {
             const double eps = 1e-12;
             if (Math.Abs(A) < eps)
@@ -284,26 +284,20 @@ internal class BezierSpline
         }
 
         // Collect candidate t in [0,1]: endpoints + derivative roots.
-        var ts = new HashSet<double>
-        {
-            0.0,
-            1.0
-        };
+        var ts = new List<double> { 0.0, 1.0 };
         Roots01(3 * ax, 2 * bx, cx, ts);
         Roots01(3 * ay, 2 * by, cy, ts);
 
-        static double EvalX(double t, PointDouble p0, double a, double b, double c) => a * t * t * t + b * t * t + c * t + p0.X;
-        static double EvalY(double t, PointDouble p0, double a, double b, double c) => a * t * t * t + b * t * t + c * t + p0.Y;
+        static double Eval(double t, double a, double b, double c, double p0)
+            => ((a * t + b) * t + c) * t + p0;
 
-        var minX = double.PositiveInfinity; 
-        var maxX = double.NegativeInfinity;
-        var minY = double.PositiveInfinity; 
-        var maxY = double.NegativeInfinity;
+        var minX = double.PositiveInfinity; var maxX = double.NegativeInfinity;
+        var minY = double.PositiveInfinity; var maxY = double.NegativeInfinity;
 
         foreach (var t in ts)
         {
-            var x = EvalX(t, p0, ax, bx, cx);
-            var y = EvalY(t, p0, ay, by, cy);
+            var x = Eval(t, ax, bx, cx, p0.X);
+            var y = Eval(t, ay, by, cy, p0.Y);
             if (x < minX)
             {
                 minX = x;

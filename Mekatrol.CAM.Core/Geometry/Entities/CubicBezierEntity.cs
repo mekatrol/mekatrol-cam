@@ -29,13 +29,13 @@ public class CubicBezierEntity : BaseEntity, IGeometricEntity
 
     public override IList<PointDouble[]> ToPoints()
     {
-        var points = BezierSpline.PlotCubicBezier(this).Select(p => new List<PointDouble>([p]).ToArray()).ToList();
+        var points = this.PlotCubicBezier().Select(p => new List<PointDouble>([p]).ToArray()).ToList();
         return points;
     }
 
     public override void UpdateBoundary()
     {
-        var (min, max) = BezierSpline.GetExtentsAnalytical(this);
+        var (min, max) = this.GetExtentsAnalytical();
         Boundary = new Boundary { Location = min, Size = new PointDouble(max.X - min.X, max.Y - min.Y) };
     }
 

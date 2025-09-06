@@ -11,7 +11,7 @@ internal class QuadraticBezier : BaseEntity, IGeometricEntity
         EndLocation = endLocation;
         Control = control;
 
-        var cubic = BezierSpline.ToCubic(this);
+        var cubic = this.ToCubic();
         Boundary = cubic.Boundary;
     }
 
@@ -21,13 +21,13 @@ internal class QuadraticBezier : BaseEntity, IGeometricEntity
 
     public override IList<PointDouble[]> ToPoints()
     {
-        var points = BezierSpline.PlotQuadraticBezier(this).Select(p => new List<PointDouble>([p]).ToArray()).ToList();
+        var points = this.PlotQuadraticBezier().Select(p => new List<PointDouble>([p]).ToArray()).ToList();
         return points;
     }
 
     public override void UpdateBoundary()
     {
-        var points = BezierSpline.PlotQuadraticBezier(this);
+        var points = this.PlotQuadraticBezier();
         Boundary = GeometryUtils.GetBoundary(points?.ToList() ?? []);
     }
 

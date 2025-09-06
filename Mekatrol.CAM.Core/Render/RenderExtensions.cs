@@ -24,7 +24,7 @@ public static class RenderExtensions
             case GeometricEntityType.Path: foreach (var c in ((PathEntity)g).Entities) { dc.Draw(c, color, scale); } break;
             case GeometricEntityType.Polygon:
             case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, scale); break;
-            case GeometricEntityType.QuadraticBezier: dc.Draw(BezierSpline.ToCubic(((QuadraticBezier)g)), color, scale); break;
+            case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, scale); break;
             case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, scale); break;
             case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, scale); break;
         }
@@ -139,7 +139,7 @@ public static class RenderExtensions
         }
 
         var pen = new Pen(new SolidColorBrush(color), 1);
-        var pts = BezierSpline.PlotCubicBezier(b);
+        var pts = b.PlotCubicBezier();
         for (var i = 1; i < pts.Count; i++)
         {
             dc.DrawLine(pen, pts[i - 1].ToPt(scale), pts[i].ToPt(scale));

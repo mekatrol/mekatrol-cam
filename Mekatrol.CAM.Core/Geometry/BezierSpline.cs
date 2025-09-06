@@ -141,7 +141,7 @@ internal static class BezierSpline
         return new PointDouble(x, y);
     }
 
-    public static IList<PointDouble> PlotCubicBezier(CubicBezierEntity bezier, double step = 0.01)
+    public static IList<PointDouble> PlotCubicBezier(this CubicBezierEntity bezier, double step = 0.01)
     {
         var points = new List<PointDouble>();
 
@@ -195,7 +195,7 @@ internal static class BezierSpline
         return new PointDouble(x, y);
     }
 
-    public static IList<PointDouble> PlotQuadraticBezier(QuadraticBezier bezier, double step = 0.01)
+    public static IList<PointDouble> PlotQuadraticBezier(this QuadraticBezier bezier, double step = 0.01)
     {
         // Samples a quadratic Bézier curve at uniform parameter intervals.
         // step: Δt in [0,1]. Smaller step → more points (denser curve).
@@ -226,7 +226,7 @@ internal static class BezierSpline
 
     // Exact cubic Bézier extents (no sampling).
     // Uses power-basis coefficients and solves B'(t)=0 for x(t) and y(t).
-    public static (PointDouble min, PointDouble max) GetExtentsAnalytical(CubicBezierEntity cubic)
+    public static (PointDouble min, PointDouble max) GetExtentsAnalytical(this CubicBezierEntity cubic)
     {
         // Local copies
         var p0 = cubic.Location;
@@ -322,7 +322,7 @@ internal static class BezierSpline
         return (new PointDouble(minX, minY), new PointDouble(maxX, maxY));
     }
 
-    public static CubicBezierEntity ToCubic(QuadraticBezier bezier)
+    public static CubicBezierEntity ToCubic(this QuadraticBezier bezier)
     {
         // A quadratic bezier of the form:
         //      [P1, C, P2]

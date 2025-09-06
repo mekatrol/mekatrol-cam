@@ -224,6 +224,110 @@ internal class BezierSpline
         return points;
     }
 
+    // Exact cubic Bézier extents (no sampling).
+    // Uses power-basis coefficients and solves B'(t)=0 for x(t) and y(t).
+    public static (PointDouble min, PointDouble max) GetExtentsAnalytical(CubicBezierEntity cubic)
+    {
+        // Local copies
+        var p0 = cubic.Location;
+        var p1 = cubic.Control1;
+        var p2 = cubic.Control2;
+        var p3 = cubic.EndLocation;
+
+        // Power-basis coefficients:
+        // P(t) = a t^3 + b t^2 + c t + p0
+        var cx = 3 * (p1.X - p0.X);
+        var cy = 3 * (p1.Y - p0.Y);
+        var bx = 3 * (p2.X - p1.X) - cx;
+        var by = 3 * (p2.Y - p1.Y) - cy;
+        var ax = p3.X - p0.X - cx - bx;
+        var ay = p3.Y - p0.Y - cy - by;
+
+        // Derivatives:
+        // x'(t) = 3ax t^2 + 2bx t + cx
+        // y'(t) = 3ay t^2 + 2by t + cy
+        static void Roots01(double A, double B, double C, HashSet<double> acc)
+        {
+            const double eps = 1e-12;
+            if (Math.Abs(A) < eps)
+            {
+                // Linear: B t + C = 0
+                if (Math.Abs(B) >= eps)
+                {
+                    var t = -C / B;
+                    if (t > 0 && t < 1)
+                    {
+                        acc.Add(t);
+                    }
+                }
+                return;
+            }
+
+            var disc = B * B - 4 * A * C;
+            if (disc < 0)
+            {
+                return;
+            }
+
+            var s = Math.Sqrt(disc);
+            var t1 = (-B + s) / (2 * A);
+            var t2 = (-B - s) / (2 * A);
+            if (t1 > 0 && t1 < 1)
+            {
+                acc.Add(t1);
+            }
+
+            if (t2 > 0 && t2 < 1)
+            {
+                acc.Add(t2);
+            }
+        }
+
+        // Collect candidate t in [0,1]: endpoints + derivative roots.
+        var ts = new HashSet<double>
+        {
+            0.0,
+            1.0
+        };
+        Roots01(3 * ax, 2 * bx, cx, ts);
+        Roots01(3 * ay, 2 * by, cy, ts);
+
+        static double EvalX(double t, PointDouble p0, double a, double b, double c) => a * t * t * t + b * t * t + c * t + p0.X;
+        static double EvalY(double t, PointDouble p0, double a, double b, double c) => a * t * t * t + b * t * t + c * t + p0.Y;
+
+        var minX = double.PositiveInfinity; 
+        var maxX = double.NegativeInfinity;
+        var minY = double.PositiveInfinity; 
+        var maxY = double.NegativeInfinity;
+
+        foreach (var t in ts)
+        {
+            var x = EvalX(t, p0, ax, bx, cx);
+            var y = EvalY(t, p0, ay, by, cy);
+            if (x < minX)
+            {
+                minX = x;
+            }
+
+            if (x > maxX)
+            {
+                maxX = x;
+            }
+
+            if (y < minY)
+            {
+                minY = y;
+            }
+
+            if (y > maxY)
+            {
+                maxY = y;
+            }
+        }
+
+        return (new PointDouble(minX, minY), new PointDouble(maxX, maxY));
+    }
+
     public static CubicBezierEntity ToCubic(QuadraticBezier bezier)
     {
         // A quadratic bezier of the form:

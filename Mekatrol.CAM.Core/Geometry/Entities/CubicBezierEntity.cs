@@ -37,8 +37,8 @@ public class CubicBezierEntity : BaseEntity, IGeometricEntity
 
     public override void UpdateBoundary()
     {
-        var points = BezierSpline.PlotCubicBezier(this);
-        Boundary = GeometryUtils.GetBoundary(points?.ToList() ?? []);
+        var (min, max) = BezierSpline.GetExtentsAnalytical(this);
+        Boundary = new Boundary { Location = min, Size = new PointDouble(max.X - min.X, max.Y - min.Y) };
     }
 
     protected override void TransformGeometry(Matrix3 m)

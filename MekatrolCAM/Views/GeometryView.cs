@@ -53,9 +53,9 @@ public sealed class GeometryView : Control
         var boundsPen = new Pen(Brushes.DarkGray, 0.2);
 
         var i = 0;
-        foreach (var e in Entities)
+        foreach (var entity in Entities)
         {
-            var (min, max) = e.GetMinMax();
+            var (min, max) = entity.GetMinMax();
             var rect = new Rect(
                 x: min.X * Scale,
                 y: min.Y * Scale,
@@ -65,7 +65,7 @@ public sealed class GeometryView : Control
             context.DrawRectangle(null, boundsPen, rect);
 
             var color = RenderColors.Palette[i++];
-            context.Draw(e, color, 1.0f);
+            context.Draw(entity, color, 1.0f);
 
             if (i >= RenderColors.Palette.Length)
             {

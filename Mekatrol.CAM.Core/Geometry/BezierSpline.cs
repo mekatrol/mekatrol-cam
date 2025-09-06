@@ -160,16 +160,20 @@ internal class BezierSpline
         return pts;
     }
 
-    public static CubicBezierEntity ToCubic(QuadraticBezier q)
+    public static CubicBezierEntity ToCubic(QuadraticBezier bezier)
     {
-        var c1 = new PointDouble(
-            q.Location.X + (2.0 / 3.0) * (q.Control.X - q.Location.X),
-            q.Location.Y + (2.0 / 3.0) * (q.Control.Y - q.Location.Y));
+        // A quadratic bezier of the form:
+        //      [P1, C, P2]
+        // can be converted to a cubic bezier of the form:
+        //      [P1, C1, C2, P2]
+        // using:
+        //      C1 = P1 + 2/3 * (C - P1)
+        //      C2 = P2 + 2/3 * (C - P2)
+        const double twoThirds = 2.0 / 3.0;
 
-        var c2 = new PointDouble(
-            q.EndLocation.X + (2.0 / 3.0) * (q.Control.X - q.EndLocation.X),
-            q.EndLocation.Y + (2.0 / 3.0) * (q.Control.Y - q.EndLocation.Y));
+        var control1 = bezier.Location + twoThirds * (bezier.Control - bezier.Location);
+        var control2 = bezier.EndLocation + twoThirds * (bezier.Control - bezier.EndLocation);
 
-        return new CubicBezierEntity(q.Location, c1, c2, q.EndLocation, q.Transform, q.Id);
+        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new Geometry.Entities.Transform());
     }
 }

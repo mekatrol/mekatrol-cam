@@ -522,7 +522,7 @@ internal static class GeometryUtils
                         if (figureStartIndex >= 0 && pts.Count > figureStartIndex)
                         {
                             // emulate GraphicsPath: set ClosePoint flag on the last point
-                            types[types.Count - 1] |= PointType.ClosePoint;
+                            types[^1] |= PointType.ClosePoint;
                         }
                         figureStartIndex = -1;
                         break;
@@ -632,23 +632,6 @@ internal static class GeometryUtils
         }
 
         return (new PointDouble(minX, minY), new PointDouble(maxX, maxY));
-    }
-
-    internal static CubicBezierEntity ToCubic(this QuadraticBezier bezier)
-    {
-        // A quadratic bezier of the form:
-        //      [P1, C, P2]
-        // can be converted to a cubic bezier of the form:
-        //      [P1, C1, C2, P2]
-        // using:
-        //      C1 = P1 + 2/3 * (C - P1)
-        //      C2 = P2 + 2/3 * (C - P2)
-        const double twoThirds = 2.0 / 3.0;
-
-        var control1 = bezier.Location + twoThirds * (bezier.Control - bezier.Location);
-        var control2 = bezier.EndLocation + twoThirds * (bezier.Control - bezier.EndLocation);
-
-        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new Geometry.Entities.Transform());
     }
 
     internal static PointInPolgygonResult PointInPolygon(PointDouble point, IList<PointDouble[]> polygons)

@@ -11,7 +11,7 @@ internal class QuadraticBezier : BaseEntity, IGeometricEntity
         EndLocation = endLocation;
         Control = control;
 
-        var cubic = this.ToCubic();
+        var cubic = BezierSpline.ToCubic(this);
         Boundary = cubic.Boundary;
     }
 

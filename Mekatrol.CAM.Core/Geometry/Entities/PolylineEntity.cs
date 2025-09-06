@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class PolylineEntity(IReadOnlyList<PointDouble> points, ITransform transform, Guid? id = null)
+public class PolylineEntity(IReadOnlyList<PointDouble> points, ITransform transform, Guid? id = null)
     : PolybaseEntity(GeometricEntityType.Polyline, points, transform, id)
 {
     /// <summary>

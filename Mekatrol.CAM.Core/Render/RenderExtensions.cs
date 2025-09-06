@@ -6,13 +6,13 @@ using Mekatrol.CAM.Core.Geometry.Entities;
 
 namespace Mekatrol.CAM.Core.Render;
 
-internal static class RenderExtensions
+public static class RenderExtensions
 {
     public const float DefaultFontSize = 30.0f; // mm
     public const string DefaultFontFamilyName = "Arial";
 
     // Entry from a Control.OnRender(DrawingContext dc)
-    internal static void Draw(this DrawingContext dc, IGeometricEntity g, Color color, float scale)
+    public static void Draw(this DrawingContext dc, IGeometricEntity g, Color color, float scale)
     {
         switch (g.Type)
         {
@@ -30,7 +30,7 @@ internal static class RenderExtensions
         }
     }
 
-    internal static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float scale)
+    public static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float scale)
     {
         if (arc is null)
         {
@@ -49,7 +49,7 @@ internal static class RenderExtensions
         }
     }
 
-    internal static void Draw(this DrawingContext dc, CircleEntity c, Color color, float scale, bool fill = false)
+    public static void Draw(this DrawingContext dc, CircleEntity c, Color color, float scale, bool fill = false)
     {
         if (c is null)
         {
@@ -65,7 +65,7 @@ internal static class RenderExtensions
         dc.DrawEllipse(brush, pen, r.Center, r.Width / 2, r.Height / 2);
     }
 
-    internal static void Draw(this DrawingContext dc, EllipseEntity e, Color color, float scale, bool fill = false)
+    public static void Draw(this DrawingContext dc, EllipseEntity e, Color color, float scale, bool fill = false)
     {
         if (e is null)
         {
@@ -82,7 +82,7 @@ internal static class RenderExtensions
         dc.DrawEllipse(brush, pen, r.Center, r.Width / 2, r.Height / 2);
     }
 
-    internal static void Draw(this DrawingContext dc, RectangleEntity re, Color color, float scale, bool fill = false)
+    public static void Draw(this DrawingContext dc, RectangleEntity re, Color color, float scale, bool fill = false)
     {
         if (re is null)
         {
@@ -106,7 +106,7 @@ internal static class RenderExtensions
         }
     }
 
-    internal static void Draw(this DrawingContext dc, LineEntity l, Color color, float scale)
+    public static void Draw(this DrawingContext dc, LineEntity l, Color color, float scale)
     {
         if (l is null)
         {
@@ -117,7 +117,7 @@ internal static class RenderExtensions
         dc.DrawLine(pen, l.Location.ToPt(scale), l.EndLocation.ToPt(scale));
     }
 
-    internal static void Draw(this DrawingContext dc, PolybaseEntity p, Color color, float scale)
+    public static void Draw(this DrawingContext dc, PolybaseEntity p, Color color, float scale)
     {
         if (p is null || p.Points.Count == 0)
         {
@@ -131,7 +131,7 @@ internal static class RenderExtensions
         }
     }
 
-    internal static void Draw(this DrawingContext dc, CubicBezierEntity b, Color color, float scale)
+    public static void Draw(this DrawingContext dc, CubicBezierEntity b, Color color, float scale)
     {
         if (b is null)
         {
@@ -146,7 +146,7 @@ internal static class RenderExtensions
         }
     }
 
-    internal static void Draw(this DrawingContext dc, TextEntity t, Color color, float scale)
+    public static void Draw(this DrawingContext dc, TextEntity t, Color color, float scale)
     {
         if (t is null)
         {

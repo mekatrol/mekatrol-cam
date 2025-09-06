@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class Boundary : IBoundary
+public class Boundary : IBoundary
 {
     public Boundary()
     {

@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class Transform : ITransform
+public class Transform : ITransform
 {
     public Transform()
     {

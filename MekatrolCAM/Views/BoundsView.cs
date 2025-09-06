@@ -2,6 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Mekatrol.CAM.Core.Geometry.Entities;
+using Mekatrol.CAM.Core.Render;
 using System.Collections.Generic;
 
 namespace MekatrolCAM.Views;
@@ -35,7 +36,7 @@ public sealed class BoundsView : Control
        AvaloniaProperty.Register<BoundsView, double>(nameof(PointRadius), 0.5);
     public double PointRadius
     {
-        get => GetValue(PointRadiusProperty); 
+        get => GetValue(PointRadiusProperty);
         set => SetValue(PointRadiusProperty, value);
     }
 
@@ -50,8 +51,8 @@ public sealed class BoundsView : Control
         }
 
         var boundsPen = new Pen(Brushes.Yellow, 1);
-        var pointBrush = Brushes.Red;
-        var r = PointRadius;
+        _ = Brushes.Red;
+        _ = PointRadius;
 
         foreach (var e in Entities)
         {
@@ -64,40 +65,7 @@ public sealed class BoundsView : Control
 
             context.DrawRectangle(null, boundsPen, rect);
 
-            if (e is IGeometricPathEntity path && path.Entities is { Count: > 0 })
-            {
-                foreach (var child in path.Entities)
-                {
-                    DrawEntityPoints(context, child, Scale, r, pointBrush);
-                }
-            }
-            else
-            {
-                DrawEntityPoints(context, e, Scale, r, pointBrush);
-            }
-        }
-    }
-
-    private static void DrawEntityPoints(DrawingContext context, IGeometricEntity ent, double scale, double radius, IBrush brush)
-    {
-        var contours = ent.ToPoints();
-        
-        if (contours is null)
-        {
-            return;
-        }
-
-        foreach (var arr in contours)
-        {
-            if (arr is null)
-            {
-                continue;
-            }
-
-            foreach (var p in arr)
-            {
-                context.DrawEllipse(brush, null, new Point(p.X * scale, p.Y * scale), radius, radius);
-            }
+            context.Draw(e, Colors.GreenYellow, 1.0f);
         }
     }
 }

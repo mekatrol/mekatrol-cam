@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class TextEntity : PointsEntity, IGeometricEntity
+public class TextEntity : PointsEntity, IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

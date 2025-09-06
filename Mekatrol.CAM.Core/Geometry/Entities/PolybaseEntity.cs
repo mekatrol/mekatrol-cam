@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal abstract class PolybaseEntity : BaseEntity, IGeometricEntity
+public abstract class PolybaseEntity : BaseEntity, IGeometricEntity
 {
     protected PolybaseEntity(GeometricEntityType entityType, IReadOnlyList<PointDouble> points, ITransform transform, Guid? id = null)
         : base(entityType, id, points.Count == 0 ? new PointDouble(0, 0) : points[0], transform)

@@ -18,9 +18,9 @@ public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
     private static readonly DataSnapshot Empty = new([]);
 
     private readonly IWindowService _windowService;
-    
+
     private ObservableAsPropertyHelper<DataSnapshot> _data;
-    
+
     public DataSnapshot Data => _data.Value;
 
     public ViewModelActivator Activator { get; } = new();
@@ -84,7 +84,7 @@ public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
                 bufferSize: 8192,
                 leaveOpen: false
             );
-            
+
             var entities = svgParser.Parse(reader, true);
             await store.UpdateDataAsync(entities!);
         });

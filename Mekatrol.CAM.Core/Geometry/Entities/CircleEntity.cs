@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class CircleEntity : BaseEntity, IGeometricEntity
+public class CircleEntity : BaseEntity, IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

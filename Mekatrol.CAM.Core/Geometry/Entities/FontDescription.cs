@@ -8,7 +8,7 @@ namespace Mekatrol.CAM.Core.Geometry.Entities;
 /// <param name="familyName">The font family name</param>
 /// <param name="size">The font size (in mm)</param>
 /// <param name="style">The font styles (if any)</param>
-internal class FontDescription(string familyName, float size, FontStyle style, FontWeight weight)
+public class FontDescription(string familyName, float size, FontStyle style, FontWeight weight)
 {
     internal static readonly FontDescription Default = new("Microsoft Sans Serif", 8.25f, FontStyle.Normal, FontWeight.Normal);
 

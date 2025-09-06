@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class LineEntity : PointsEntity, IGeometricEntity
+public class LineEntity : PointsEntity, IGeometricEntity
 {
     public LineEntity(PointDouble startLocation, PointDouble endLocation, ITransform transform, Guid? id = null)
         : this(startLocation.X, startLocation.Y, endLocation.X, endLocation.Y, transform, id)

@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class RectangleEntity : PointsEntity, IGeometricEntity
+public class RectangleEntity : PointsEntity, IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

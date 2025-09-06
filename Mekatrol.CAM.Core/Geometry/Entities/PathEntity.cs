@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class PathEntity : BaseEntity, IGeometricPathEntity
+public class PathEntity : BaseEntity, IGeometricPathEntity
 {
     public PathEntity()
         : this(0, 0, [], false, new Transform(), null)

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal abstract class BaseEntity : IGeometricEntity
+public abstract class BaseEntity : IGeometricEntity
 {
     public BaseEntity(GeometricEntityType type, Guid? id, PointDouble location, ITransform transform)
     {

@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry;
 
-internal enum PointInPolgygonResult
+public enum PointInPolgygonResult
 {
     Inside,
     Outside,

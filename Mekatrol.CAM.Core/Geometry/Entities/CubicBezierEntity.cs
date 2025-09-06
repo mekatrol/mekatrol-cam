@@ -1,9 +1,8 @@
 ﻿using Mekatrol.CAM.Core.Render;
-using System.Linq;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class CubicBezierEntity : BaseEntity, IGeometricEntity
+public class CubicBezierEntity : BaseEntity, IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

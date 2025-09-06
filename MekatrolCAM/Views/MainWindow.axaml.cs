@@ -9,7 +9,7 @@ namespace MekatrolCAM.Views;
 public partial class MainWindow : Window
 {
     // Required for runtime loader / designer
-    public MainWindow()               
+    public MainWindow()
     {
         InitializeComponent();
 
@@ -21,11 +21,10 @@ public partial class MainWindow : Window
         }
     }
 
-
     public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel;
         WindowState = WindowState.Maximized;
-    }    
+    }
 }

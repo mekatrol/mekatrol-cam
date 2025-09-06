@@ -3,7 +3,7 @@ using Mekatrol.CAM.Core.Render;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal abstract class PointsEntity : BaseEntity
+public abstract class PointsEntity : BaseEntity
 {
     protected List<PointDouble> _untransformedPoints = [];
     protected List<PointDouble> _transformedPoints = [];

@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class EllipseEntity : BaseEntity, IGeometricEntity
+public class EllipseEntity : BaseEntity, IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

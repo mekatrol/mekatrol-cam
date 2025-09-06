@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-internal class ArcEntity : BaseEntity, IGeometricEntity
+public class ArcEntity : BaseEntity, IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

@@ -50,7 +50,7 @@ public sealed class BoundsView : Control
             return;
         }
 
-        var boundsPen = new Pen(Brushes.Yellow, 1);
+        var boundsPen = new Pen(Brushes.DarkGray, 1);
         _ = Brushes.Red;
         _ = PointRadius;
 

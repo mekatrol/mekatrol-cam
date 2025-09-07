@@ -21,11 +21,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -73,11 +73,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -132,11 +132,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var lsvgPathst = svgParser.Parse(streamReader);
+        Assert.IsNotNull(lsvgPathst);
+        Assert.AreEqual(1, lsvgPathst.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = lsvgPathst.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -202,11 +202,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -272,11 +272,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -342,11 +342,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -370,11 +370,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -418,28 +418,28 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(5, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(5, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
         Assert.AreEqual(3, path.Entities.Count);
         Assert.IsTrue(path.IsClosed);
 
-        geometry = list[1];
+        geometry = svgPath.Entities[1];
         Assert.AreEqual(GeometricEntityType.Polygon, geometry.Type);
         var poly = (PolygonEntity)geometry;
         Assert.AreEqual(3, poly.Points.Count);
 
-        geometry = list[2];
+        geometry = svgPath.Entities[2];
         Assert.AreEqual(GeometricEntityType.Polygon, geometry.Type);
         poly = (PolygonEntity)geometry;
         Assert.AreEqual(3, poly.Points.Count);
 
-        geometry = list[3];
+        geometry = svgPath.Entities[3];
         Assert.AreEqual(GeometricEntityType.Polygon, geometry.Type);
         poly = (PolygonEntity)geometry;
         Assert.AreEqual(3, poly.Points.Count);
@@ -459,11 +459,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(24, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(24, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -523,11 +523,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -578,11 +578,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -624,11 +624,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
         var path = (PathEntity)geometry;
@@ -762,11 +762,11 @@ public partial class SvgParserTests
             using var stream = new MemoryStream(byteArray);
             using var streamReader = new StreamReader(stream);
 
-            var list = svgParser.Parse(streamReader);
-            Assert.IsNotNull(list);
-            Assert.AreEqual(1, list.Count);
+            var svgPath = svgParser.Parse(streamReader);
+            Assert.IsNotNull(svgPath);
+            Assert.AreEqual(1, svgPath.Entities.Count);
 
-            var geometry = list[0];
+            var geometry = svgPath.Entities[0];
             Assert.AreEqual(GeometricEntityType.Path, geometry.Type);
 
             var path = (PathEntity)geometry;

@@ -5,78 +5,63 @@ namespace Mekatrol.CAM.Core.Geometry.Entities;
 
 public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble location, GeometryTransform transform) : IGeometricEntity
 {
+    protected PointDouble _minUntransformed = new();
+    protected PointDouble _maxUntransformed = new();
+    protected PointDouble _minTransformed = new();
+    protected PointDouble _maxTransformed = new();
+
+    // The points before transforms applied
+    protected List<PointDouble> _untransformedPoints = [];
+
+    // The points once all transforms applied
+    protected List<PointDouble> _transformedPoints = [];
+
     public GeometricEntityType Type { get; set; } = type;
 
     public Guid Id { get; set; } = (id != null && id != Guid.Empty) ? id.Value : Guid.NewGuid();
 
+    public IReadOnlyList<PointDouble> UntransformedPoints { get { return _untransformedPoints; } }
+
+    public IReadOnlyList<PointDouble> TransformedPoints { get { return _transformedPoints; } }
+
     public virtual PointDouble Location { get; set; } = new PointDouble(location.X, location.Y);
 
+    public PointDouble MinUntransformed => _minUntransformed;
+
+    public PointDouble MaxUntransformed => _maxUntransformed;
+
+    public PointDouble MinTransformed => _minTransformed;
+
+    public PointDouble MaxTransformed => _maxTransformed;
+
     [JsonIgnore]
-    public IBoundary Boundary { get; set; } = new Boundary(new PointDouble(0, 0), new PointDouble(0, 0));
+    public IBoundary BoundaryUntransformed { get; set; } = new Boundary(new PointDouble(0, 0), new PointDouble(0, 0));
+
+    [JsonIgnore]
+    public IBoundary BoundaryTransformed { get; set; } = new Boundary(new PointDouble(0, 0), new PointDouble(0, 0));
 
     public GeometryTransform Transform { get; set; } = transform;
 
-    public bool BoundsContains(PointDouble point)
+    /// <summary>
+    /// Shift location and transformed points by the translation offset
+    /// </summary>
+    public virtual void TranslateLocation(PointDouble translate)
     {
-        var topLeft = Boundary.Location;
-        var bottomRight = Boundary.BottomRight;
+        Location += translate;
 
-        return
-            point.X >= topLeft.X &&
-            point.Y >= topLeft.Y &&
-            point.X <= bottomRight.X &&
-            point.Y <= bottomRight.Y;
+        for (var i = 0; i < _transformedPoints.Count; i++)
+        {
+            var point = _transformedPoints[i];
+            point.X += translate.X;
+            point.Y += translate.Y;
+        }
     }
 
-    public virtual bool Contains(PointDouble point)
+    public virtual void UpdateBoundary()
     {
-        var topLeft = Boundary.Location;
-        var bottomRight = Boundary.BottomRight;
-
-        var result = GeometryUtils.PointInPolygon(
-            point,
-            [
-                new[]
-                {
-                    new PointDouble(topLeft.X, topLeft.Y) ,
-                    new PointDouble(topLeft.X, bottomRight.Y),
-                    new PointDouble(bottomRight.X, bottomRight.Y),
-                    new PointDouble(bottomRight.X, topLeft.Y),
-                }.ToArray()
-            ]);
-
-        return IsInPolygonResult(result);
+        BoundaryUntransformed = GeometryUtils.GetBoundary(_minUntransformed.X, _minUntransformed.Y, _maxUntransformed.X, _maxUntransformed.Y);
+        BoundaryTransformed = GeometryUtils.GetBoundary(_minTransformed.X, _minTransformed.Y, _maxTransformed.X, _maxTransformed.Y);
     }
-
-    public virtual bool ContainsWithBoundaryCheck(PointDouble point)
-    {
-        // Do quick test of boundary contains then only do more 
-        // intensive check if bounds contains point
-        return BoundsContains(point) && Contains(point);
-    }
-
-    public (PointDouble min, PointDouble max) GetMinMax()
-    {
-        return (Boundary.Location, Location + Boundary.Size);
-    }
-
-    public virtual void TransformBy(Matrix3 m)
-    {
-        var transform = Transform.GetMatrix() * m;
-
-        Transform.Scale = transform.GetScale();
-        Transform.Rotate = new GeometryRotate(GeometryUtils.RadiansToDegrees(transform.GetRotation()), 0, 0);
-        Transform.Translate = transform.GetTranslation();
-
-        Location *= m;
-        TransformGeometry(m);
-
-        UpdateBoundary();
-    }
-
-    public abstract void UpdateBoundary();
-
-    protected abstract void TransformGeometry(Matrix3 m);
 
     protected static bool IsInPolygonResult(PointInPolgygonResult result)
     {
@@ -90,21 +75,38 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
         };
     }
 
-    public abstract IList<PointDouble[]> ToPoints();
+    public abstract IReadOnlyList<PointDouble[]> ToPoints();
 
-    public virtual IList<PointDouble> GetRotatedBoundary()
+    public virtual void InitializeState(GeometryTransform ancestorCumulativeTransform)
     {
-        var boundary = OffsetBoundary(Boundary);
+        var points = ToPoints();
+        _transformedPoints = [];
 
-        var points = boundary.ToPoints();
-        points = GeometryUtils.RotatePoints(points, GeometryUtils.DegreesToRadians(Transform.Rotate?.Angle ?? 0));
-        return points;
-    }
+        // Calculate transform with ancestor and this
+        var cumulativeTransformMatrix = (Transform * ancestorCumulativeTransform).GetMatrix();
 
-    protected virtual IBoundary OffsetBoundary(IBoundary boundary)
-    {
-        var offset = 3;
-        boundary = new Boundary(boundary.Location + new PointDouble(-offset, -offset), boundary.Size + new PointDouble(offset * 2, offset * 2));
-        return boundary;
+        _minUntransformed = new PointDouble(double.MaxValue, double.MaxValue);
+        _maxUntransformed = new PointDouble(double.MinValue, double.MinValue);
+        _minTransformed = new PointDouble(double.MaxValue, double.MaxValue);
+        _maxTransformed = new PointDouble(double.MinValue, double.MinValue);
+
+        foreach(var poly in points)
+        {
+            foreach (var point in poly)
+            {
+                var transformed = point * cumulativeTransformMatrix;
+
+                _minUntransformed = _minUntransformed.Min(point);
+                _maxUntransformed = _maxUntransformed.Max(point);
+
+                _minTransformed = _minTransformed.Min(point);
+                _maxTransformed = _maxTransformed.Max(point);
+
+                _transformedPoints.Add(transformed);
+            }
+        }
+
+        // Now we can calculate bounds
+        UpdateBoundary();
     }
 }

@@ -8,17 +8,16 @@ namespace MekatrolCAM.UnitTest.Geometry;
 public class PointInPolygonRectangleTests
 {
     [TestMethod]
-    public void TestRectAtOrgin()
+    public void TestRectAtOrigin()
     {
         var rect = new RectangleEntity(0, 0, 10, 10, 0, 0, new GeometryTransform());
-        var points = rect.ToPoints();
+        rect.InitializeState(new GeometryTransform());
+        var points = rect.TransformedPoints;
 
-        var (min, max) = rect.GetMinMax();
-
-        var minX = min.X;
-        var minY = min.Y;
-        var maxX = max.X;
-        var maxY = max.Y;
+        var minX = rect.MinUntransformed.X;
+        var minY = rect.MinUntransformed.Y;
+        var maxX = rect.MaxUntransformed.X;
+        var maxY = rect.MaxUntransformed.Y;
 
         /**********************************************************************************************************
          * Vertices
@@ -125,14 +124,13 @@ public class PointInPolygonRectangleTests
     public void TestRectAroundOrigin()
     {
         var rect = new RectangleEntity(-10, -10, 20, 20, 0, 0, new GeometryTransform());
-        var points = rect.ToPoints();
+        rect.InitializeState(new GeometryTransform());
+        var points = rect.TransformedPoints;
 
-        var (min, max) = rect.GetMinMax();
-
-        var minX = min.X;
-        var minY = min.Y;
-        var maxX = max.X;
-        var maxY = max.Y;
+        var minX = rect.MinUntransformed.X;
+        var minY = rect.MinUntransformed.Y;
+        var maxX = rect.MaxUntransformed.X;
+        var maxY = rect.MaxUntransformed.Y;
 
         /**********************************************************************************************************
          * Vertices
@@ -241,7 +239,8 @@ public class PointInPolygonRectangleTests
         var transform = new GeometryTransform() { Rotate = new GeometryRotate { Angle = 45 } };
 
         var rect = new RectangleEntity(-10, -10, 20, 20, 0, 0, transform);
-        var points = rect.ToPoints();
+        rect.InitializeState(new GeometryTransform());
+        var points = rect.TransformedPoints;
 
         var result = GeometryUtils.PointInPolygon(new PointDouble(0, -14.142135623730951), points);
         Assert.AreEqual(PointInPolgygonResult.Vertex, result);
@@ -262,7 +261,8 @@ public class PointInPolygonRectangleTests
         var transform = new GeometryTransform() { Rotate = new GeometryRotate { Angle = 45 } };
 
         var rect = new RectangleEntity(90, 90, 20, 20, 0, 0, transform);
-        var points = rect.ToPoints();
+        rect.InitializeState(new GeometryTransform());
+        var points = rect.TransformedPoints;
 
         var result = GeometryUtils.PointInPolygon(new PointDouble(0, 127.27922061357856), points);
         Assert.AreEqual(PointInPolgygonResult.Vertex, result);
@@ -283,7 +283,8 @@ public class PointInPolygonRectangleTests
         var transform = new GeometryTransform() { Rotate = new GeometryRotate { Angle = 45 } };
 
         var rect = new RectangleEntity(-110, -110, 20, 20, 0, 0, transform);
-        var points = rect.ToPoints();
+        rect.InitializeState(new GeometryTransform());
+        var points = rect.TransformedPoints;
 
         var result = GeometryUtils.PointInPolygon(new PointDouble(0, -155.56349186104046), points);
         Assert.AreEqual(PointInPolgygonResult.Vertex, result);

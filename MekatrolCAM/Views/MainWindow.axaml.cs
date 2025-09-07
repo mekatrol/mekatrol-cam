@@ -17,7 +17,7 @@ public partial class MainWindow : Window
 
         if (Design.IsDesignMode)
         {
-            DataContext = new MainWindowViewModel(new WindowService(), new SvgParser(NullLogger<SvgParser>.Instance), new DataStore());
+            DataContext = new MainWindowViewModel(new WindowService(), new SvgParser(NullLogger<SvgParser>.Instance), new GeometricPathStore());
         }
     }
 

@@ -2,6 +2,7 @@
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Mekatrol.CAM.Core.Data;
+using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Parsers.Svg;
 using MekatrolCAM.Views;
 using ReactiveUI;
@@ -15,13 +16,13 @@ namespace MekatrolCAM.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
 {
-    private static readonly DataSnapshot Empty = new([]);
+    private static readonly GeometricPathDataSnapshot Empty = new(new PathEntity());
 
     private readonly IWindowService _windowService;
 
-    private ObservableAsPropertyHelper<DataSnapshot> _data;
+    private readonly ObservableAsPropertyHelper<GeometricPathDataSnapshot> _geometricPath;
 
-    public DataSnapshot Data => _data.Value;
+    public GeometricPathDataSnapshot Data => _geometricPath.Value;
 
     public ViewModelActivator Activator { get; } = new();
 
@@ -31,14 +32,14 @@ public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
 
     public ReactiveCommand<Unit, Unit> FileOpenCommand { get; }
 
-    public MainWindowViewModel(IWindowService windowService, ISvgParser svgParser, IDataStore store)
+    public MainWindowViewModel(IWindowService windowService, ISvgParser svgParser, IGeometricPathStore store)
     {
         _windowService = windowService;
 
         store.Snapshot
              .StartWith(Empty)
              .ObserveOn(RxApp.MainThreadScheduler)
-             .ToProperty(this, vm => vm.Data, out _data, initialValue: Empty);
+             .ToProperty(this, vm => vm.Data, out _geometricPath, initialValue: Empty);
 
         Roots.Add(new TreeNode("Projects",
             new TreeNode("Alpha"),
@@ -85,8 +86,8 @@ public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
                 leaveOpen: false
             );
 
-            var entities = svgParser.Parse(reader, true);
-            await store.UpdateDataAsync(entities!);
+            var geometricPath = svgParser.Parse(reader, true);
+            await store.UpdateGeometricPath(geometricPath);
         });
     }
 }

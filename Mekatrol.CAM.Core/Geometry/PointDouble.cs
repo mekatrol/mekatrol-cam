@@ -42,6 +42,16 @@ public struct PointDouble
         return p;
     }
 
+    public readonly PointDouble Min(PointDouble other)
+    {
+        return new PointDouble(Math.Min(X, other.X), Math.Min(Y, other.Y));
+    }
+
+    public readonly PointDouble Max(PointDouble other)
+    {
+        return new PointDouble(Math.Max(X, other.X), Math.Max(Y, other.Y));
+    }
+
     public readonly bool Equals(PointDouble other)
     {
         return

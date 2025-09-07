@@ -8,23 +8,36 @@ public interface IGeometricEntity
 
     PointDouble Location { get; }
 
-    IBoundary Boundary { get; }
+    IReadOnlyList<PointDouble> UntransformedPoints { get; }
+
+
+    IReadOnlyList<PointDouble> TransformedPoints { get; }
+
+    PointDouble MinUntransformed { get; }
+
+    PointDouble MaxUntransformed { get; }
+
+    PointDouble MinTransformed { get; }
+
+    PointDouble MaxTransformed { get; }
+
+    IBoundary BoundaryUntransformed { get; }
+
+    IBoundary BoundaryTransformed { get; }
 
     GeometryTransform Transform { get; }
 
     void UpdateBoundary();
 
-    void TransformBy(Matrix3 m);
+    IReadOnlyList<PointDouble[]> ToPoints();
 
-    (PointDouble min, PointDouble max) GetMinMax();
+    /// <summary>
+    /// Generate untransformed and transformed points by applying the entity transform by the parent transform, also update boundaries.
+    /// </summary>
+    void InitializeState(GeometryTransform ancestorCumulativeTransform);
 
-    IList<PointDouble[]> ToPoints();
-
-    IList<PointDouble> GetRotatedBoundary();
-
-    bool BoundsContains(PointDouble point);
-
-    bool Contains(PointDouble point);
-
-    bool ContainsWithBoundaryCheck(PointDouble point);
+    /// <summary>
+    /// Shift location and transformed points by the translation offset
+    /// </summary>
+    void TranslateLocation(PointDouble translate);
 }

@@ -16,9 +16,13 @@ public class GeometryTransform
     public static GeometryTransform Identity => new();
 
     public PointDouble Translate { get; set; }
+    
     public PointDouble Scale { get; set; }
+    
     public GeometryRotate Rotate { get; set; }
+    
     public double SkewX { get; set; }
+    
     public double SkewY { get; set; }
 
     /// <summary>
@@ -28,9 +32,11 @@ public class GeometryTransform
     {
         var m = Matrix3.Identity;
         m *= Matrix3.CreateScale(Scale);
+        var p = new PointDouble(Rotate.X, Rotate.Y);
+        m *= Matrix3.CreateTranslate(new PointDouble(-p.X, -p.Y));
         m *= Matrix3.CreateRotation(GeometryUtils.DegreesToRadians(Rotate.Angle));
+        m *= Matrix3.CreateTranslate(p);
         m *= Matrix3.CreateTranslate(Translate);
-        // Note: Skew is ignored (no skew matrix helpers available here).
         return m;
     }
 

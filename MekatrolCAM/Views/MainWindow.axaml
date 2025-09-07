@@ -43,7 +43,7 @@
 		<!-- Main content -->
 		<Border Margin="8" Padding="12"
 				Background="{DynamicResource ThemeControlLowBrush}">
-			<views:GeometryView Entities="{Binding Data.Entities}" Scale="1.0"/>
+			<views:GeometryView Path="{Binding Data.Path}" Scale="1.0"/>
 		</Border>
 	</DockPanel>
 </Window>

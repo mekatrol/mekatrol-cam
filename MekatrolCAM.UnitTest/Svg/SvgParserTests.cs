@@ -26,10 +26,10 @@ public partial class SvgParserTests
     {
         var svgParser = _services.GetRequiredService<ISvgParser>();
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-        var list = svgParser.Parse(null);
+        var path = svgParser.Parse(null);
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-        Assert.IsNotNull(list);
-        Assert.AreEqual(0, list.Count);
+        Assert.IsNotNull(path);
+        Assert.AreEqual(0, path.Entities.Count);
     }
 
     [TestMethod]
@@ -40,9 +40,9 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(0, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(0, svgPath.Entities.Count);
     }
 
     [TestMethod]

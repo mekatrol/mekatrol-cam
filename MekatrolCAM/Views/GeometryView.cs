@@ -3,24 +3,23 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
-using System.Collections.Generic;
 
 namespace MekatrolCAM.Views;
 
 public sealed class GeometryView : Control
 {
-    public static readonly DirectProperty<GeometryView, IReadOnlyList<IGeometricEntity>?> EntitiesProperty =
-        AvaloniaProperty.RegisterDirect<GeometryView, IReadOnlyList<IGeometricEntity>?>(
-            nameof(Entities),
-            o => o.Entities,
-            (o, v) => o.Entities = v);
+    public static readonly DirectProperty<GeometryView, IGeometricPathEntity> PathProperty =
+        AvaloniaProperty.RegisterDirect<GeometryView, IGeometricPathEntity>(
+            nameof(Path),
+            o => o.Path,
+            (o, v) => o.Path = v);
 
-    private IReadOnlyList<IGeometricEntity>? _entities;
+    private IGeometricPathEntity _path = new PathEntity();
 
-    public IReadOnlyList<IGeometricEntity>? Entities
+    public IGeometricPathEntity Path
     {
-        get => _entities;
-        set { SetAndRaise(EntitiesProperty, ref _entities, value); InvalidateVisual(); }
+        get => _path;
+        set { SetAndRaise(PathProperty, ref _path, value); InvalidateVisual(); }
     }
 
     public static readonly StyledProperty<float> ScaleProperty =
@@ -45,7 +44,7 @@ public sealed class GeometryView : Control
         // black background
         context.DrawRectangle(Brushes.Black, null, Bounds);
 
-        if (Entities is null || Entities.Count == 0)
+        if (Path.Entities is null || Path.Entities.Count == 0)
         {
             return;
         }
@@ -53,9 +52,9 @@ public sealed class GeometryView : Control
         var boundsPen = new Pen(Brushes.DarkGray, 0.2);
 
         var i = 0;
-        foreach (var entity in Entities)
+        foreach (var entity in Path.Entities)
         {
-            var bounds = entity.Boundary;
+            var bounds = entity.BoundaryUntransformed;
 
             var rect = new Rect(
                 x: bounds.Location.X * Scale,
@@ -66,7 +65,7 @@ public sealed class GeometryView : Control
             context.DrawRectangle(null, boundsPen, rect);
 
             var color = RenderColors.Palette[i++];
-            context.Draw(entity, color, Scale);
+            context.Draw(entity, color, Scale, entity.Transform.GetMatrix());
 
             if (i >= RenderColors.Palette.Length)
             {

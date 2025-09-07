@@ -20,7 +20,7 @@ public class Boundary : IBoundary
 
     public PointDouble BottomRight => Location + Size;
 
-    public IList<PointDouble> ToPoints()
+    public IReadOnlyList<PointDouble> ToPoints()
     {
         return new[]
         {

@@ -17,5 +17,5 @@ public interface IBoundary
     /// </summary>
     PointDouble BottomRight { get; }
 
-    IList<PointDouble> ToPoints();
+    IReadOnlyList<PointDouble> ToPoints();
 }

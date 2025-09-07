@@ -3,7 +3,7 @@ using Mekatrol.CAM.Core.Render;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class TextEntity : PointsEntity, IGeometricEntity
+public class TextEntity : BaseEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer
@@ -37,9 +37,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
             0,
             new Matrix3());
 
-        // Translate the location of the text
-        SetUntransformedPoints(points.Select(p => p + Location).ToList());
-
+        _untransformedPoints = points;
         PointTypes = pointTypes;
     }
 
@@ -51,7 +49,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
 
     public IList<PointType> PointTypes { get; set; }
 
-    public override IList<PointDouble[]> ToPoints()
+    public override IReadOnlyList<PointDouble[]> ToPoints()
     {
         // A piece of text can be made up of multiple polygons depending on the font
         // We need to break the point sets into multiple polygons
@@ -62,7 +60,7 @@ public class TextEntity : PointsEntity, IGeometricEntity
         for (var i = 0; i < PointTypes.Count; i++)
         {
             var pt = PointTypes[i];
-            var p = Points[i];
+            var p = UntransformedPoints[i];
 
             if (pt == PointType.StartOfFigure)
             {
@@ -82,6 +80,6 @@ public class TextEntity : PointsEntity, IGeometricEntity
             polygons.Add(polygon.ToArray());
         }
 
-        return polygons;
+        return polygons.AsReadOnly();
     }
 }

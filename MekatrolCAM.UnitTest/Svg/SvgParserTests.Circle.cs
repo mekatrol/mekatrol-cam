@@ -121,11 +121,11 @@ public partial class SvgParserTests
         using var stream = new MemoryStream(byteArray);
         using var streamReader = new StreamReader(stream);
 
-        var list = svgParser.Parse(streamReader);
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list.Count);
+        var svgPath = svgParser.Parse(streamReader);
+        Assert.IsNotNull(svgPath);
+        Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = list[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Circle, geometry.Type);
 
         var circle = (CircleEntity)geometry;

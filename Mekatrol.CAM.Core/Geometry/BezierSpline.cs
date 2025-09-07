@@ -141,7 +141,7 @@ internal static class BezierSpline
         return new PointDouble(x, y);
     }
 
-    public static IList<PointDouble> PlotCubicBezier(this CubicBezierEntity bezier, double step = 0.01)
+    public static IReadOnlyList<PointDouble> PlotCubicBezier(this CubicBezierEntity bezier, double step = 0.01)
     {
         var points = new List<PointDouble>();
 

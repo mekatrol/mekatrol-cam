@@ -27,7 +27,7 @@ sealed class Program
         builder.Services.AddSingleton<MainWindowViewModel>();
         builder.Services.AddSingleton<IWindowService, WindowService>();
         builder.Services.AddSingleton<ISvgParser, SvgParser>();
-        builder.Services.AddSingleton<IDataStore, DataStore>();
+        builder.Services.AddSingleton<IGeometricPathStore, GeometricPathStore>();
 
         builder.Logging.AddConsole();
 

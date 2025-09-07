@@ -1,30 +1,10 @@
-﻿using Mekatrol.CAM.Core.Render;
+﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-namespace Mekatrol.CAM.Core.Geometry.Entities;
-
-public abstract class PolybaseEntity : BaseEntity, IGeometricEntity
+public abstract class PolybaseEntity(GeometricEntityType entityType, IReadOnlyList<PointDouble> points, GeometryTransform transform, Guid? id = null) : BaseEntity(entityType, id, points.Count == 0 ? new PointDouble(0, 0) : points[0], transform), IGeometricEntity
 {
-    protected PolybaseEntity(GeometricEntityType entityType, IReadOnlyList<PointDouble> points, GeometryTransform transform, Guid? id = null)
-        : base(entityType, id, points.Count == 0 ? new PointDouble(0, 0) : points[0], transform)
-    {
-        Points = points;
-        Boundary = new Boundary();
-        UpdateBoundary();
-    }
+    public IReadOnlyList<PointDouble> Points { get; set; } = points;
 
-    public IReadOnlyList<PointDouble> Points { get; set; }
-
-    public override void UpdateBoundary()
-    {
-        Boundary = GeometryUtils.GetBoundary(Points.ToList());
-    }
-
-    protected override void TransformGeometry(Matrix3 m)
-    {
-        Points = Points.Select(x => x * m).ToList();
-    }
-
-    public override IList<PointDouble[]> ToPoints()
+    public override IReadOnlyList<PointDouble[]> ToPoints()
     {
         return [Points.ToArray()];
     }

@@ -654,7 +654,7 @@ public static class GeometryUtils
         return (new PointDouble(minX, minY), new PointDouble(maxX, maxY));
     }
 
-    public static PointInPolgygonResult PointInPolygon(PointDouble point, IList<PointDouble[]> polygons)
+    public static PointInPolgygonResult PointInPolygon(PointDouble point, IReadOnlyList<PointDouble[]> polygons)
     {
         var overallResult = PointInPolgygonResult.Outside;
 
@@ -682,9 +682,9 @@ public static class GeometryUtils
         return overallResult;
     }
 
-    public static PointInPolgygonResult PointInPolygon(PointDouble point, PointDouble[] polyPoints)
+    public static PointInPolgygonResult PointInPolygon(PointDouble point, IReadOnlyList<PointDouble> polyPoints)
     {
-        var n = polyPoints.Length;  // number of vertices
+        var n = polyPoints.Count;  // number of vertices
         int i, i1;                  // point index; i1 = i-1 mod n
         double x;                   // x intersection of e with ray
         var rCross = 0;             // number of right edge/ray crossings
@@ -763,7 +763,7 @@ public static class GeometryUtils
         }
     }
 
-    public static IList<PointDouble> RotatePoints(IList<PointDouble> points, double angleInRadians)
+    public static IReadOnlyList<PointDouble> RotatePoints(IReadOnlyList<PointDouble> points, double angleInRadians)
     {
         // Get min / max locations
         var (min, max) = GetMinMax(points);

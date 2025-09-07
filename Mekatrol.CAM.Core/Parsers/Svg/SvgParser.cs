@@ -27,50 +27,46 @@ public class SvgParser : ISvgParser
         _currentFont = new FontDescription(fontFamily.Name, 30, FontStyle.Normal, FontWeight.Normal);
     }
 
-    public IReadOnlyList<IGeometricEntity> Parse(StreamReader stream, bool translateToZero = false)
+    public IGeometricPathEntity Parse(StreamReader stream, bool translateToZero = false)
     {
         if (stream == null || stream.EndOfStream)
         {
-            return [];
+            return new PathEntity();
         }
 
         var xmlDocument = XDocument.Load(stream, LoadOptions.SetLineInfo);
 
         if (xmlDocument.Root == null)
         {
-            return [];
+            return new PathEntity();
         }
 
-        var entities = ParseSvgElement(xmlDocument.Root, new GeometryTransform());
+        var pathEntity = ParseSvgElement(xmlDocument.Root);
 
+        // Create untransformed andtransformed points and boundaries
+        pathEntity.InitializeState(GeometryTransform.Identity);
+
+        // Translate path from (minx, miny) to (0, 0)
         if (translateToZero)
         {
-            var minX = double.MaxValue;
-            var minY = double.MaxValue;
+            var translate = new PointDouble();
 
-            foreach (var entity in entities)
+            foreach (var entity in pathEntity.Entities)
             {
-                var (min, max) = entity.GetMinMax();
-
-                minX = Math.Min(minX, min.X);
-                minY = Math.Min(minY, min.Y);
+                // Update translate to minimum of location and current translate value 
+                translate = translate.Min(entity.Location);
             }
 
-            var translate = new PointDouble(-minX, -minY);
-
-            // Shift the entities so that the first sits in the very top left
-            var translateMatrix = Matrix3.CreateTranslate(translate);
-
-            foreach (var entity in entities)
+            foreach (var entity in pathEntity.Entities)
             {
-                entity.TransformBy(translateMatrix);
+                entity.TranslateLocation(translate);
             }
         }
 
-        return entities;
+        return pathEntity;
     }
 
-    private IReadOnlyList<IGeometricEntity> ParseSvgElement(XElement element, GeometryTransform parentTransform)
+    private IGeometricPathEntity ParseSvgElement(XElement element)
     {
         // We are expecting the svg tag
         AssertIsTag(element, "svg");
@@ -87,20 +83,24 @@ public class SvgParser : ISvgParser
             }
         }
 
-        return ParseSvgElementChildren(element, parentTransform * ParseTransformAttribute(element));
+        return new PathEntity(0, 0, ParseSvgElementChildren(element).ToList(), false, GeometryTransform.Identity);
     }
 
-    private IReadOnlyList<IGeometricEntity> ParseGElement(XElement element, GeometryTransform parentTransform)
+    private IGeometricEntity ParseGElement(XElement element)
     {
         // We are expecting the svg tag
         AssertIsTag(element, "g");
 
-        var children = ParseSvgElementChildren(element, parentTransform * ParseTransformAttribute(element));
+        var transform = ParseTransformAttribute(element);
 
-        return children;
+        var children = ParseSvgElementChildren(element);
+
+        var path = new PathEntity(0, 0, children.ToList(), false, transform);
+
+        return path;
     }
 
-    private IReadOnlyList<IGeometricEntity> ParseSvgElementChildren(XElement parentElement, GeometryTransform parentTransform)
+    private IReadOnlyList<IGeometricEntity> ParseSvgElementChildren(XElement parentElement)
     {
         // The list of geometries to be returned
         var geometries = new List<IGeometricEntity>();
@@ -112,44 +112,44 @@ public class SvgParser : ISvgParser
             {
                 // The g element can contain multiple svg elements
                 case "g":
-                    geometries.AddRange(ParseGElement(element, parentTransform));
+                    geometries.Add(ParseGElement(element));
                     break;
 
                 // The svg element can be muliple depths
                 case "svg":
-                    geometries.AddRange(ParseSvgElement(element, parentTransform));
+                    geometries.AddRange(ParseSvgElement(element));
                     break;
 
                 case "circle":
-                    geometries.Add(ParseCircleElement(element, parentTransform));
+                    geometries.Add(ParseCircleElement(element));
                     break;
 
                 case "ellipse":
-                    geometries.Add(ParseEllipseElement(element, parentTransform));
+                    geometries.Add(ParseEllipseElement(element));
                     break;
 
                 case "line":
-                    geometries.Add(ParseLineElement(element, parentTransform));
+                    geometries.Add(ParseLineElement(element));
                     break;
 
                 case "path":
-                    geometries.Add(ParsePathElement(element, parentTransform));
+                    geometries.Add(ParsePathElement(element));
                     break;
 
                 case "polygon":
-                    geometries.Add(ParsePolygonElement(element, parentTransform));
+                    geometries.Add(ParsePolygonElement(element));
                     break;
 
                 case "polyline":
-                    geometries.Add(ParsePolylineElement(element, parentTransform));
+                    geometries.Add(ParsePolylineElement(element));
                     break;
 
                 case "rect":
-                    geometries.Add(ParseRectElement(element, parentTransform));
+                    geometries.Add(ParseRectElement(element));
                     break;
 
                 case "text":
-                    geometries.Add(ParseTextElement(element, parentTransform));
+                    geometries.Add(ParseTextElement(element));
                     break;
 
                 case "style":
@@ -186,7 +186,7 @@ public class SvgParser : ISvgParser
         return geometries;
     }
 
-    private static IGeometricEntity ParseRectElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParseRectElement(XElement element)
     {
         AssertIsTag(element, "rect");
 
@@ -213,10 +213,10 @@ public class SvgParser : ISvgParser
             ry ??= rx;
         }
 
-        return new RectangleEntity(x, y, w, h, rx ?? 0.0, ry ?? 0.0, parentTransform * ParseTransformAttribute(element));
+        return new RectangleEntity(x, y, w, h, rx ?? 0.0, ry ?? 0.0, ParseTransformAttribute(element));
     }
 
-    private static IGeometricEntity ParseCircleElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParseCircleElement(XElement element)
     {
         AssertIsTag(element, "circle");
 
@@ -234,10 +234,10 @@ public class SvgParser : ISvgParser
             throw new XmlException("circle 'r' attribute must be provided", null, lineInfo.LineNumber, lineInfo.LinePosition);
         }
 
-        return new CircleEntity(x, y, r.Value, parentTransform * ParseTransformAttribute(element));
+        return new CircleEntity(x, y, r.Value, ParseTransformAttribute(element));
     }
 
-    private static IGeometricEntity ParseEllipseElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParseEllipseElement(XElement element)
     {
         AssertIsTag(element, "ellipse");
 
@@ -246,10 +246,10 @@ public class SvgParser : ISvgParser
         var rx = GetAttributeDoubleValue(element, "rx").Value ?? 1.0;
         var ry = GetAttributeDoubleValue(element, "ry").Value ?? 1.0;
 
-        return new EllipseEntity(x, y, rx, ry, parentTransform * ParseTransformAttribute(element));
+        return new EllipseEntity(x, y, rx, ry, ParseTransformAttribute(element));
     }
 
-    private static IGeometricEntity ParseLineElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParseLineElement(XElement element)
     {
         AssertIsTag(element, "line");
 
@@ -258,10 +258,10 @@ public class SvgParser : ISvgParser
         var x2 = GetAttributeDoubleValue(element, "x2").Value ?? 0.0;
         var y2 = GetAttributeDoubleValue(element, "y2").Value ?? 0.0;
 
-        return new LineEntity(x1, y1, x2, y2, parentTransform * ParseTransformAttribute(element));
+        return new LineEntity(x1, y1, x2, y2, ParseTransformAttribute(element));
     }
 
-    private static IGeometricEntity ParsePolygonElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParsePolygonElement(XElement element)
     {
         AssertIsTag(element, "polygon");
 
@@ -329,10 +329,10 @@ public class SvgParser : ISvgParser
             throw exception;
         }
 
-        return new PolygonEntity(points, parentTransform * ParseTransformAttribute(element));
+        return new PolygonEntity(points, ParseTransformAttribute(element));
     }
 
-    private static IGeometricEntity ParsePolylineElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParsePolylineElement(XElement element)
     {
         AssertIsTag(element, "polyline");
 
@@ -400,10 +400,10 @@ public class SvgParser : ISvgParser
             throw exception;
         }
 
-        return new PolylineEntity(points.AsReadOnly<PointDouble>(), parentTransform * ParseTransformAttribute(element));
+        return new PolylineEntity(points.AsReadOnly<PointDouble>(), ParseTransformAttribute(element));
     }
 
-    private static IGeometricEntity ParsePathElement(XElement element, GeometryTransform parentTransform)
+    private static IGeometricEntity ParsePathElement(XElement element)
     {
         AssertIsTag(element, "path");
 
@@ -419,20 +419,9 @@ public class SvgParser : ISvgParser
             // Parse the path to a set of geometries
             var (startLocation, geometries, closed) = new SvgPathParser(pathAttribute.Value).Parse();
 
-            // Apply this element's transform to EACH child segment,
-            // not to the PathEntity container (so children actually move).
-            var m = ParseTransformAttribute(element).GetMatrix();
-            if (m != Matrix3.Identity)
-            {
-                foreach (var g in geometries)
-                {
-                    g.TransformBy(m);
-                }
-            }
-
             // Keep path container transform identity after baking
             var first = geometries.FirstOrDefault();
-            return new PathEntity(first?.Location.X ?? 0, first?.Location.Y ?? 0, geometries, closed, parentTransform);
+            return new PathEntity(first?.Location.X ?? 0, first?.Location.Y ?? 0, geometries, closed, new GeometryTransform());
         }
         catch (Exception ex)
         {
@@ -521,7 +510,7 @@ public class SvgParser : ISvgParser
                         var textEntity = new TextEntity(x, y, text.Trim(), font, textAlign, new GeometryTransform());
                         childText.Add(textEntity);
                         var spaceSize = GeometryUtils.MeasureText("I", textEntity.Font, textAlign, 0, 0, Matrix3.Identity);
-                        x += textEntity.Boundary.Size.X + spaceSize.X;
+                        x += textEntity.BoundaryUntransformed.Size.X + spaceSize.X;
                     }
                     break;
 
@@ -542,7 +531,7 @@ public class SvgParser : ISvgParser
                         var textEntity = (TextEntity)texts;
                         childText.Add(textEntity);
                         var spaceSize = GeometryUtils.MeasureText("I", textEntity.Font, textAlign, 0, 0, Matrix3.Identity);
-                        x += textEntity.Boundary.Size.X + spaceSize.X;
+                        x += textEntity.BoundaryUntransformed.Size.X + spaceSize.X;
                     }
                     else if (texts.Type == GeometricEntityType.Path)
                     {
@@ -554,7 +543,7 @@ public class SvgParser : ISvgParser
                         }
 
                         var spaceSize = GeometryUtils.MeasureText("I", font, textAlign, 0, 0, Matrix3.Identity);
-                        x += path.Boundary.Size.X + spaceSize.X;
+                        x += path.BoundaryUntransformed.Size.X + spaceSize.X;
 
                         childText.AddRange(path.Entities);
                     }
@@ -569,7 +558,7 @@ public class SvgParser : ISvgParser
         return entityPath;
     }
 
-    private IGeometricEntity ParseTextElement(XElement element, GeometryTransform parentTransform)
+    private IGeometricEntity ParseTextElement(XElement element)
     {
         AssertIsTag(element, "text");
 
@@ -579,17 +568,7 @@ public class SvgParser : ISvgParser
         // Extract text elements as entity path
         var textPath = (PathEntity)ParseTextSubElement(element, "text", _currentFont, x, y);
 
-        // Transform the text paths (this is mostly rotating) – bake into children
-        var m = ParseTransformAttribute(element).GetMatrix();
-        if (m != Matrix3.Identity)
-        {
-            foreach (var g in textPath.Entities)
-            {
-                g.TransformBy(m);
-            }
-        }
-
-        return new PathEntity(textPath.Location.X, textPath.Location.Y, textPath.Entities, /*closed:*/ false, parentTransform);
+        return new PathEntity(textPath.Location.X, textPath.Location.Y, textPath.Entities, /*closed:*/ false, ParseTransformAttribute(element));
     }
 
     private static FontDescription? ParseFontFromStyle(string? style)

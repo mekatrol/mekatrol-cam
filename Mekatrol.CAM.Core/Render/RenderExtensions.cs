@@ -12,155 +12,139 @@ public static class RenderExtensions
     public const string DefaultFontFamilyName = "Arial";
 
     // Entry from a Control.OnRender(DrawingContext dc)
-    public static void Draw(this DrawingContext dc, IGeometricEntity g, Color color, float scale)
+    public static void Draw(this DrawingContext dc, IGeometricEntity g, Color color, float scale, Matrix3 accumulatedTransform)
     {
         switch (g.Type)
         {
             case GeometricEntityType.Arc: dc.Draw((ArcEntity)g, color, scale); break;
-            case GeometricEntityType.Circle: dc.Draw((CircleEntity)g, color, scale); break;
-            case GeometricEntityType.CubicBezier: dc.Draw((CubicBezierEntity)g, color, scale); break;
-            case GeometricEntityType.Ellipse: dc.Draw((EllipseEntity)g, color, scale); break;
-            case GeometricEntityType.Line: dc.Draw((LineEntity)g, color, scale); break;
-            case GeometricEntityType.Path: foreach (var c in ((PathEntity)g).Entities) { dc.Draw(c, color, scale); } break;
+            case GeometricEntityType.Circle: dc.Draw((CircleEntity)g, color, scale, accumulatedTransform); break;
+            case GeometricEntityType.CubicBezier: dc.Draw((CubicBezierEntity)g, color, scale, accumulatedTransform); break;
+            case GeometricEntityType.Ellipse: dc.Draw((EllipseEntity)g, color, scale, accumulatedTransform); break;
+            case GeometricEntityType.Line: dc.Draw((LineEntity)g, color, scale, accumulatedTransform); break;
+            case GeometricEntityType.Path: dc.Draw((PathEntity)g, color, scale, accumulatedTransform); break;
             case GeometricEntityType.Polygon:
-            case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, scale); break;
-            case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, scale); break;
-            case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, scale); break;
+            case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, scale, accumulatedTransform); break;
+            case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, scale, accumulatedTransform); break;
+            case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, scale, accumulatedTransform); break;
             case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, scale); break;
         }
     }
 
     public static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float scale)
     {
-        if (arc is null)
-        {
-            return;
-        }
-
         var pen = new Pen(new SolidColorBrush(color), 1);
-        var (pts, _, _, _, _) = GeometryUtils.PlotEllipse(
-            arc.Location.X, arc.Location.Y, arc.Radii.X, arc.Radii.Y,
-            GeometryUtils.DegreesToRadians(arc.StartAngle),
-            GeometryUtils.DegreesToRadians(arc.SweepAngle),
-            GeometryUtils.DegreesToRadians(arc.EllipseRotation));
+
+        var pts = arc.TransformedPoints;
+
         for (var i = 1; i < pts.Count; i++)
         {
             dc.DrawLine(pen, pts[i - 1].ToPt(scale), pts[i].ToPt(scale));
         }
     }
 
-    public static void Draw(this DrawingContext dc, CircleEntity c, Color color, float scale, bool fill = false)
+    public static void Draw(this DrawingContext dc, PathEntity path, Color color, float scale, Matrix3 accumulatedTransform)
     {
-        if (c is null)
+        var m = path.Transform.GetMatrix() * accumulatedTransform;
+        
+        foreach (var c in path.Entities)
         {
-            return;
-        }
-
-        var d = (float)(c.Radius * 2) * scale;
-        var x = (float)(c.Location.X - c.Radius) * scale;
-        var y = (float)(c.Location.Y - c.Radius) * scale;
-        var r = new Rect(x, y, d, d);
-        var brush = fill ? new SolidColorBrush(color) : null;
-        var pen = fill ? null : new Pen(new SolidColorBrush(color), 1);
-        dc.DrawEllipse(brush, pen, r.Center, r.Width / 2, r.Height / 2);
-    }
-
-    public static void Draw(this DrawingContext dc, EllipseEntity e, Color color, float scale, bool fill = false)
-    {
-        if (e is null)
-        {
-            return;
-        }
-
-        var w = (float)(e.Radius.X * 2) * scale;
-        var h = (float)(e.Radius.Y * 2) * scale;
-        var x = (float)(e.Location.X - e.Radius.X) * scale;
-        var y = (float)(e.Location.Y - e.Radius.Y) * scale;
-        var r = new Rect(x, y, w, h);
-        var brush = fill ? new SolidColorBrush(color) : null;
-        var pen = fill ? null : new Pen(new SolidColorBrush(color), 1);
-        dc.DrawEllipse(brush, pen, r.Center, r.Width / 2, r.Height / 2);
-    }
-
-    public static void Draw(this DrawingContext dc, RectangleEntity re, Color color, float scale, bool fill = false)
-    {
-        if (re is null)
-        {
-            return;
-        }
-
-        if (fill)
-        {
-            var rect = new Rect((float)re.Location.X * scale, (float)re.Location.Y * scale,
-                                (float)re.Size.X * scale, (float)re.Size.Y * scale);
-            dc.DrawRectangle(new SolidColorBrush(color), null, rect);
-        }
-        else
-        {
-            var pen = new Pen(new SolidColorBrush(color), 1);
-            for (var i = 0; i < re.Points.Count; i++)
-            {
-                var j = (i + 1) % re.Points.Count;
-                dc.DrawLine(pen, re.Points[i].ToPt(scale), re.Points[j].ToPt(scale));
-            }
+            dc.Draw(c, color, scale, m);
         }
     }
 
-    public static void Draw(this DrawingContext dc, LineEntity l, Color color, float scale)
+    public static void Draw(this DrawingContext dc, CircleEntity circle, Color color, float scale, Matrix3 accumulatedTransform)
     {
-        if (l is null)
-        {
-            return;
-        }
+        var m = circle.Transform.GetMatrix() * accumulatedTransform;
+
+        var circleCentre = new PointDouble(circle.Location.X, circle.Location.Y) * m;
+        var radius = circle.Radius * m.GetScale().X; // Circle radius is equal in X and Y direction so can pick either
 
         var pen = new Pen(new SolidColorBrush(color), 1);
-        dc.DrawLine(pen, l.Location.ToPt(scale), l.EndLocation.ToPt(scale));
+        dc.DrawEllipse(null, pen, circleCentre.ToPt(scale), radius * scale, radius * scale);
     }
 
-    public static void Draw(this DrawingContext dc, PolybaseEntity p, Color color, float scale)
+    public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float scale, Matrix3 accumulatedTransform)
     {
-        if (p is null || p.Points.Count == 0)
+        var m = ellipse.Transform.GetMatrix() * accumulatedTransform;
+
+        var circleCentre = new PointDouble(ellipse.Location.X, ellipse.Location.Y) * m;
+        var radius = new PointDouble(ellipse.Radius.X, ellipse.Radius.Y) * m.GetScale();
+
+        var pen = new Pen(new SolidColorBrush(color), 1);
+        dc.DrawEllipse(null, pen, circleCentre.ToPt(scale), radius.X * scale, radius.Y * scale);
+    }
+
+    public static void Draw(this DrawingContext dc, RectangleEntity rect, Color color, float scale, Matrix3 accumulatedTransform)
+    {
+        var m = rect.Transform.GetMatrix() * accumulatedTransform;
+
+        var pen = new Pen(new SolidColorBrush(color), 1);
+        for (var i = 0; i < rect.UntransformedPoints.Count; i++)
+        {
+            var j = (i + 1) % rect.UntransformedPoints.Count;
+
+            var p1 = rect.UntransformedPoints[i] * m;
+            var p2 = rect.UntransformedPoints[j] * m;
+
+            dc.DrawLine(pen, p1.ToPt(scale), p2.ToPt(scale));
+        }
+    }
+
+    public static void Draw(this DrawingContext dc, LineEntity line, Color color, float scale, Matrix3 accumulatedTransform)
+    {
+        var m = line.Transform.GetMatrix() * accumulatedTransform;
+        var p1 = line.Location * m;
+        var p2 = line.EndLocation * m;
+
+        var pen = new Pen(new SolidColorBrush(color), 1);
+        dc.DrawLine(pen, p1.ToPt(scale), p2.ToPt(scale));
+    }
+
+    public static void Draw(this DrawingContext dc, PolybaseEntity poly, Color color, float scale, Matrix3 accumulatedTransform)
+    {
+        if (poly.Points.Count == 0)
         {
             return;
         }
 
+        var m = poly.Transform.GetMatrix() * accumulatedTransform;
+
         var pen = new Pen(new SolidColorBrush(color), 1);
-        for (var i = 1; i < p.Points.Count; i++)
+        for (var i = 1; i < poly.Points.Count; i++)
         {
-            dc.DrawLine(pen, p.Points[i - 1].ToPt(scale), p.Points[i].ToPt(scale));
+            var p1 = poly.Points[i - 1] * m;
+            var p2 = poly.Points[i] * m;
+
+            dc.DrawLine(pen, p1.ToPt(scale), p2.ToPt(scale));
         }
     }
 
-    public static void Draw(this DrawingContext dc, CubicBezierEntity b, Color color, float scale)
+    public static void Draw(this DrawingContext dc, CubicBezierEntity bezier, Color color, float scale, Matrix3 accumulatedTransform)
     {
-        if (b is null)
-        {
-            return;
-        }
-
         var pen = new Pen(new SolidColorBrush(color), 1);
-        var pts = b.PlotCubicBezier();
+        var pts = bezier.PlotCubicBezier();
+
+        var m = bezier.Transform.GetMatrix() * accumulatedTransform;
+
         for (var i = 1; i < pts.Count; i++)
         {
-            dc.DrawLine(pen, pts[i - 1].ToPt(scale), pts[i].ToPt(scale));
+            var p1 = pts[i - 1] * m;
+            var p2 = pts[i] * m;
+
+            dc.DrawLine(pen, p1.ToPt(scale), p2.ToPt(scale));
         }
     }
 
-    public static void Draw(this DrawingContext dc, TextEntity t, Color color, float scale)
+    public static void Draw(this DrawingContext dc, TextEntity text, Color color, float scale)
     {
-        if (t is null)
-        {
-            return;
-        }
-
         var pen = new Pen(new SolidColorBrush(color), 1);
-        var start = t.Location;
+        var start = text.Location;
 
-        for (var i = 0; i < t.Points.Count; i++)
+        for (var i = 0; i < text.UntransformedPoints.Count; i++)
         {
-            var kind = t.PointTypes[i];
-            var v1 = t.Points[i];
-            var v2 = (i == t.Points.Count - 1 || (kind & PointType.ClosePoint) != 0) ? start : t.Points[i + 1];
+            var kind = text.PointTypes[i];
+            var v1 = text.UntransformedPoints[i];
+            var v2 = (i == text.UntransformedPoints.Count - 1 || (kind & PointType.ClosePoint) != 0) ? start : text.UntransformedPoints[i + 1];
 
             switch (kind & PointType.LowOrderMask)
             {

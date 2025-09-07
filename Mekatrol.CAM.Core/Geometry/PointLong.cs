@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry;
 
-internal struct PointLong
+public struct PointLong
 {
     public long X;
     public long Y;

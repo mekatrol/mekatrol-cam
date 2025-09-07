@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Mekatrol.CAM.Core.Parsers.Svg;
 
-internal class CssParser
+public class CssParser
 {
     private const string ClassNamePattern = @"\.-?([_a-zA-Z]+[_a-zA-Z0-9-]*)\s*\{(\s*.*\s*)}";
     private const string FontSizePattern = @"([0-9]*\.{0,1}[0-9]+)([a-zA-Z%]*)(\/([0-9]*\.{0,1}[0-9]+)([a-zA-Z%]*)){0,1}";

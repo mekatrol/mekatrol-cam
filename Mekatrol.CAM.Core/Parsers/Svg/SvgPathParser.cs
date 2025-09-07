@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Mekatrol.CAM.Core.Parsers.Svg;
 
-internal class SvgPathParser(string data)
+public class SvgPathParser(string data)
 {
     private readonly string _data = data;
     private int _index = 0;
@@ -536,7 +536,7 @@ internal class SvgPathParser(string data)
         }
     }
 
-    internal static (string value1, string value2) GetSplitValue(string all)
+    public static (string value1, string value2) GetSplitValue(string all)
     {
         // A pair of points can take multiple forms where the value separator
         // can be one of , + -

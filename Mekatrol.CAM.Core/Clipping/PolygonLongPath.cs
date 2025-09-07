@@ -1,6 +1,6 @@
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class PolygonLongPath : List<PolygonLong>, IClipSolution
+public class PolygonLongPath : List<PolygonLong>, IClipSolution
 {
     public SolutonType SolutionType => SolutonType.Path;
 

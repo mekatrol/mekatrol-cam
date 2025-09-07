@@ -1,6 +1,6 @@
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class Maxima
+public class Maxima
 {
     internal long X;
     internal Maxima? Next;

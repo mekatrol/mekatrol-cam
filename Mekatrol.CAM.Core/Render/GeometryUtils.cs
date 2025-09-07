@@ -6,13 +6,13 @@ using System.Runtime.CompilerServices;
 
 namespace Mekatrol.CAM.Core.Render;
 
-internal static class GeometryUtils
+public static class GeometryUtils
 {
     const double DegreesToRadiansFactor = Math.PI / 180.0;
     const double RadiansToDegreesFactor = 180.0 / Math.PI;
     const double PI2 = 2.0 * Math.PI;
 
-    internal static PointDouble GetReflectedPoint(PointDouble pointToReflect, PointDouble reflectionLinePoint1, PointDouble reflectionLinePoint2)
+    public static PointDouble GetReflectedPoint(PointDouble pointToReflect, PointDouble reflectionLinePoint1, PointDouble reflectionLinePoint2)
     {
         // Special case: Vertical line (reflect -ve twice the distance to the line line X)
         if (NearEqual(reflectionLinePoint1.X, reflectionLinePoint2.X))
@@ -44,7 +44,7 @@ internal static class GeometryUtils
         return new PointDouble(x4, y4);
     }
 
-    internal static PointDouble GetReflectedPoint(PointDouble pointToReflect, PointDouble reflectionPoint)
+    public static PointDouble GetReflectedPoint(PointDouble pointToReflect, PointDouble reflectionPoint)
     {
         // The reflected point is the 'point to reflect' rotated 180°
         // about the 'reflection point'.
@@ -57,19 +57,19 @@ internal static class GeometryUtils
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static double DegreesToRadians(double degrees)
+    public static double DegreesToRadians(double degrees)
     {
         return degrees * DegreesToRadiansFactor;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static double RadiansToDegrees(double radians)
+    public static double RadiansToDegrees(double radians)
     {
         return radians * RadiansToDegreesFactor;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static double NormaliseAngleRadians(double a)
+    public static double NormaliseAngleRadians(double a)
     {
         a %= Math.PI * 2;
         if (a < 0)
@@ -81,7 +81,7 @@ internal static class GeometryUtils
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static double NormaliseAngleDegrees(double a)
+    public static double NormaliseAngleDegrees(double a)
     {
         a %= 360.0;
         if (a < 0)
@@ -92,12 +92,12 @@ internal static class GeometryUtils
         return a;
     }
 
-    internal static bool NearZero(double value, double tolerance = GeometryConstants.Tolerance)
+    public static bool NearZero(double value, double tolerance = GeometryConstants.Tolerance)
     {
         return Math.Abs(value) <= tolerance;
     }
 
-    internal static bool NearEqual(double value1, double value2, double tolerance = GeometryConstants.Tolerance)
+    public static bool NearEqual(double value1, double value2, double tolerance = GeometryConstants.Tolerance)
     {
         return Math.Abs(value1 - value2) <= tolerance;
     }
@@ -117,7 +117,7 @@ internal static class GeometryUtils
     /// <param name="isLargeArc">the large arc flag, and is false if an arc spanning less than or equal to 180 degrees is chosen, or true if an arc spanning greater than 180 degrees is chosen.</param>
     /// <param name="isClockwise">the sweep flag, and is false if the line joining center to arc sweeps through decreasing angles, or true if it sweeps through increasing angles.</param>
     /// <returns>The generated arc OR null if arc not well defined OR a line if rx and ry are zero</returns>
-    internal static IGeometricEntity? GenerateArc(
+    public static IGeometricEntity? GenerateArc(
         double x1, double y1,   // The start point X and Y
         double x2, double y2,   // The end point X and Y
         double rx, double ry,   // The elliptical arc radii X and Y
@@ -326,7 +326,7 @@ internal static class GeometryUtils
     /// <param name="vx">Vector v x component</param>
     /// <param name="vy">Vector v y component</param>
     /// <returns>The angle between the two vectors (in radians)</returns>
-    internal static double AngleBetween(double ux, double uy, double vx, double vy)
+    public static double AngleBetween(double ux, double uy, double vx, double vy)
     {
         var dot = ux * vx + uy * vy;
         var mod = Math.Sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
@@ -338,7 +338,7 @@ internal static class GeometryUtils
         return theta;
     }
 
-    internal static (IList<PointDouble> points, double minX, double minY, double maxX, double maxY) PlotEllipse(
+    public static (IList<PointDouble> points, double minX, double minY, double maxX, double maxY) PlotEllipse(
         double cx, double cy,
         double rx, double ry,
         double startAngle = 0.0, double sweepAngle = Math.PI * 2,
@@ -568,7 +568,7 @@ internal static class GeometryUtils
         return (points, types);
     }
 
-    internal static PointDouble MeasureText(
+    public static PointDouble MeasureText(
         string text,
         FontDescription fontDescription,
         TextAlignment alignment,
@@ -599,7 +599,7 @@ internal static class GeometryUtils
         return new PointDouble(maxX - minX, maxY - minY); ;
     }
 
-    internal static IBoundary GetBoundary(double x1, double y1, double x2, double y2)
+    public static IBoundary GetBoundary(double x1, double y1, double x2, double y2)
     {
         var minX = Math.Min(x1, x2);
         var minY = Math.Min(y1, y2);
@@ -624,7 +624,7 @@ internal static class GeometryUtils
         return new Boundary(location, size);
     }
 
-    internal static IBoundary GetBoundary(IList<PointDouble> points)
+    public static IBoundary GetBoundary(IList<PointDouble> points)
     {
         if (points.Count == 0)
         {
@@ -636,7 +636,7 @@ internal static class GeometryUtils
         return GetBoundary(min.X, min.Y, max.X, max.Y);
     }
 
-    internal static (PointDouble min, PointDouble max) GetMinMax(IEnumerable<PointDouble> points)
+    public static (PointDouble min, PointDouble max) GetMinMax(IEnumerable<PointDouble> points)
     {
         var minX = double.MaxValue;
         var minY = double.MaxValue;
@@ -654,7 +654,7 @@ internal static class GeometryUtils
         return (new PointDouble(minX, minY), new PointDouble(maxX, maxY));
     }
 
-    internal static PointInPolgygonResult PointInPolygon(PointDouble point, IList<PointDouble[]> polygons)
+    public static PointInPolgygonResult PointInPolygon(PointDouble point, IList<PointDouble[]> polygons)
     {
         var overallResult = PointInPolgygonResult.Outside;
 
@@ -682,7 +682,7 @@ internal static class GeometryUtils
         return overallResult;
     }
 
-    internal static PointInPolgygonResult PointInPolygon(PointDouble point, PointDouble[] polyPoints)
+    public static PointInPolgygonResult PointInPolygon(PointDouble point, PointDouble[] polyPoints)
     {
         var n = polyPoints.Length;  // number of vertices
         int i, i1;                  // point index; i1 = i-1 mod n
@@ -763,7 +763,7 @@ internal static class GeometryUtils
         }
     }
 
-    internal static IList<PointDouble> RotatePoints(IList<PointDouble> points, double angleInRadians)
+    public static IList<PointDouble> RotatePoints(IList<PointDouble> points, double angleInRadians)
     {
         // Get min / max locations
         var (min, max) = GetMinMax(points);

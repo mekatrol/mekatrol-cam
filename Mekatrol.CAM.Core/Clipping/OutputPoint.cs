@@ -2,7 +2,7 @@ using Mekatrol.CAM.Core.Geometry;
 
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class OutputPoint
+public class OutputPoint
 {
     public int Index;
     public PointLong Point;

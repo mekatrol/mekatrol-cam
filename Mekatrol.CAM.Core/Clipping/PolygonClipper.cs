@@ -48,7 +48,7 @@ using Mekatrol.CAM.Core.Geometry;
 
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class PolygonClipper
+public class PolygonClipper
 {
     private LocalMinima? _minimaList;
     private LocalMinima? _currentLocalMinima;

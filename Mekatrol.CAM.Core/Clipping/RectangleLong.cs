@@ -1,6 +1,6 @@
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal struct RectangleLong
+public struct RectangleLong
 {
     public long Left;
     public long Top;

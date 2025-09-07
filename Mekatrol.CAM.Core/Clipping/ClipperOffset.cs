@@ -2,7 +2,7 @@ using Mekatrol.CAM.Core.Geometry;
 
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class ClipperOffset
+public class ClipperOffset
 {
     private PolygonLongPath? _destinationPolygons;
     private PolygonLong? _sourcePolygon;

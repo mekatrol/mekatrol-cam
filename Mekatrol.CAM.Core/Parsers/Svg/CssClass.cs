@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Parsers.Svg;
 
-internal class CssClass(string name)
+public class CssClass(string name)
 {
     public string Name { get; set; } = name;
 

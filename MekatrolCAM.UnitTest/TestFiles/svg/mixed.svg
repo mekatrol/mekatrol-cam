@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="550" height="800" >
+	<style>
+		.small { font: italic 13px sans-serif; font-weight: bold; font-size: 12px/30px; font-family: fred, mary, Jane;
+		}
+		.heavy
+		{
+		font: italic small-caps bold 12px/30px Georgia, serif sans-serif; font-weight: italic; }
+
+		/* Note that the color of the text is set with the    *
+		* fill property, the color property is for HTML only */
+		.Rrrrr {
+		font: italic 400 40px serif; fill: red;
+		}
+	</style>
+	<g color="green">
+		<path d="M100,100 a50,100 0 0 1 0,100 l 100, 100 M200, 0 c200,100 250,100 250,200"/>
+		<path d="M450,200 s400,300 400,200 M200,300 Q400,350 600,300 T1000,300"/>
+		<line x1="100" y1="200" x2="200" y2="200" stroke="yellow"/>
+		<polygon points="0,100 50,25 50,75 100,0" />
+		<polyline points="0,400 50,325 50,375 100,300" />
+		<circle cx="160" cy="50" r="40" />
+		<ellipse cx="55" cy="170" rx="45" ry="66" />
+		<text x="65" y="455">This IS the TEXT</text>
+		<text x="65" y="480">Compute θ1 and Δθ ½</text>
+	</g>
+</svg>

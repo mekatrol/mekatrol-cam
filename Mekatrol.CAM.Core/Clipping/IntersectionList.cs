@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Clipping;
 
-internal class IntersectionList : List<IntersectNode>
+public class IntersectionList : List<IntersectNode>
 {
     private readonly Sorter _sorter = new();
 

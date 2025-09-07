@@ -4,7 +4,7 @@ namespace Mekatrol.CAM.Core.Clipping;
 /// OutputPolygon: contains a path in the clipping solution. Edges in the AEL will
 /// carry a pointer to an OutputPolygon when they are part of the clipping solution.
 /// </summary>
-internal class OutputPolygon
+public class OutputPolygon
 {
     internal int Index = ClippingHelper.Unassigned;
     internal bool IsHole;

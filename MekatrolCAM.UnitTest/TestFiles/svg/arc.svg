@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="550" height="800" >
+	<g color="green">
+		<path d="M100,100 a50,100 0 0 1 0,100" fill="#2a376e"/>
+		<line x1="100" y1="100" x2="100" y2="200" stroke="yellow"/>
+	</g>
+</svg>

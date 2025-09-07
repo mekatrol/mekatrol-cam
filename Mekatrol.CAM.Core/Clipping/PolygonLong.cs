@@ -2,7 +2,7 @@
 
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class PolygonLong : List<PointLong>
+public class PolygonLong : List<PointLong>
 {
     public PolygonOrientation Orientation
     {

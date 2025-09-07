@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" >
+	<g color="green">
+		<line x1="10" y1="10" x2="110" y2="110" stroke="green" />
+		<path d="M110,110 l100,100" stroke="red" />
+		<path d="M110,110 l100,-100" stroke="cyan" />
+		<path d="M210,210 l100,100" stroke="blue" />
+		<path d="M210,210 l100,-100" stroke="magenta" />
+	</g>
+</svg>

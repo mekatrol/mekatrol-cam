@@ -1,6 +1,6 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Algorithms;
 
-internal class GrahamsHull
+public class GrahamsHull
 {
     // Start with capacity for 1000 points (can grow thereafter)
     private readonly List<PointLinkedListItem> _points = new(1000);

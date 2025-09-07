@@ -1,6 +1,6 @@
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class PolygonNode
+public class PolygonNode
 {
     /// <summary>
     /// The polygon points for this node in the tree.

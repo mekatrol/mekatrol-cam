@@ -2,7 +2,7 @@ using Mekatrol.CAM.Core.Geometry;
 
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class IntersectNode
+public class IntersectNode
 {
     internal Edge? Edge1;
     internal Edge? Edge2;

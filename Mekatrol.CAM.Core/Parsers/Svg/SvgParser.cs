@@ -845,7 +845,6 @@ public class SvgParser : ISvgParser
         return new Matrix3(m);
     }
 
-
     private static PointDouble ParseTranslate(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))

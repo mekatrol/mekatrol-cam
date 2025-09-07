@@ -1,6 +1,6 @@
 namespace Mekatrol.CAM.Core.Clipping;
 
-internal class LocalMinima
+public class LocalMinima
 {
     internal long Y;
     internal Edge? LeftBound;

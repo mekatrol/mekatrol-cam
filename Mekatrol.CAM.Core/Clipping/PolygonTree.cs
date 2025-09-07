@@ -19,7 +19,7 @@ namespace Mekatrol.CAM.Core.Clipping;
 /// In this example, the bottom hole in the tree is a hole inside a polygon
 /// inside a hole inside the outer polygon.
 /// </summary>
-internal class PolygonTree : PolygonNode, IClipSolution
+public class PolygonTree : PolygonNode, IClipSolution
 {
     public SolutonType SolutionType => SolutonType.Tree;
 

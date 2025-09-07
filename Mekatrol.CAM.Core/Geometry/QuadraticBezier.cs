@@ -3,7 +3,7 @@ using Mekatrol.CAM.Core.Render;
 
 namespace Mekatrol.CAM.Core.Geometry;
 
-internal class QuadraticBezier : BaseEntity, IGeometricEntity
+public class QuadraticBezier : BaseEntity, IGeometricEntity
 {
     public QuadraticBezier(PointDouble location, PointDouble control, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.QuadraticBezier, id, location, transform)

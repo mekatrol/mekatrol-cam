@@ -213,12 +213,56 @@ public static class RenderExtensions
         return new Size(layout.Height, layout.Width);
     }
 
-    public static FontFamily BestFontFamily(string? suggested = null)
+    public static FontFamily BestFontFamily(string? suggestFontFamily = null)
     {
-        if (!string.IsNullOrWhiteSpace(suggested))
+        if (string.IsNullOrWhiteSpace(suggestFontFamily))
         {
-            return new FontFamily(suggested);
+            suggestFontFamily = "Arial";
         }
+
+        // All family names
+        var fontFamilyNames = FontManager.Current
+            .SystemFonts               // IFontCollection<FontFamily>
+            .Select(ff => ff.Name)     // primary family name
+            .OrderBy(n => n)
+            .ToList();
+
+        if (!string.IsNullOrWhiteSpace(suggestFontFamily))
+        {
+            // Get rid of any single quotes surrounding family name
+            suggestFontFamily = suggestFontFamily.TrimStart('\'').TrimEnd('\'');
+        }
+
+        if (!string.IsNullOrWhiteSpace(suggestFontFamily))
+        {
+            IList<string> suggestedValues = suggestFontFamily
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim().TrimStart('"').TrimEnd('"'))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            foreach (var value in suggestedValues)
+            {
+                var matchingFontFamily = fontFamilyNames.FirstOrDefault(f => f.Equals(value, StringComparison.OrdinalIgnoreCase));
+                if (matchingFontFamily != null)
+                {
+                    return matchingFontFamily;
+                }
+
+                // Remove any hyphens
+                var alternateValue = value.Replace("-", " ");
+
+                // Try contains
+                matchingFontFamily = fontFamilyNames.FirstOrDefault(f => f.Contains(alternateValue, StringComparison.OrdinalIgnoreCase));
+                if (matchingFontFamily != null)
+                {
+                    return matchingFontFamily;
+                }
+            }
+        }
+
+        // No matches, so try and find our preferred, else the first font found
+        var preferredFonts = new[] { DefaultFontFamilyName, "Monospace" };
 
         // Pick one that exists on Windows, Linux and Mac
         return new FontFamily("Arial, Segoe UI, Sans-Serif");

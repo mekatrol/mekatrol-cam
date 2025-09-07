@@ -45,7 +45,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, PathEntity path, Color color, float scale, Matrix3 accumulatedTransform)
     {
         var m = path.Transform.GetMatrix() * accumulatedTransform;
-        
+
         foreach (var c in path.Entities)
         {
             dc.Draw(c, color, scale, m);
@@ -116,6 +116,18 @@ public static class RenderExtensions
             var p2 = poly.Points[i] * m;
 
             dc.DrawLine(pen, p1.ToPt(scale), p2.ToPt(scale));
+        }
+
+        // We need to automatically close a polygon if it is not already closed
+        if (poly is PolygonEntity polygon)
+        {
+            var p1 = polygon.Points[^1] * m;
+            var p2 = polygon.Points[0] * m;
+
+            if (p1 != p2)
+            {
+                dc.DrawLine(pen, p1.ToPt(scale), p2.ToPt(scale));
+            }
         }
     }
 

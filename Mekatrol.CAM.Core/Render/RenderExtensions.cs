@@ -43,7 +43,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(arc, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 var pts = arc.TransformedPoints;
 
@@ -57,7 +57,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, CircleEntity circle, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(circle, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 var circleCentre = new Point(circle.Location.X, circle.Location.Y);
                 var radius = circle.Radius;
@@ -69,7 +69,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(ellipse, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 var cx = ellipse.Location.X;
                 var cy = ellipse.Location.Y;
@@ -85,7 +85,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, RectangleEntity rect, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(rect, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 for (var i = 0; i < rect.UntransformedPoints.Count; i++)
                 {
@@ -102,7 +102,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, LineEntity line, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(line, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 dc.DrawLine(pen, line.Location.ToPt(), line.EndLocation.ToPt());
             });
@@ -116,7 +116,7 @@ public static class RenderExtensions
         }
 
         dc.DrawTransformed(poly, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 for (var i = 1; i < poly.Points.Count; i++)
                 {
@@ -143,7 +143,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, CubicBezierEntity bezier, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(bezier, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 var pts = bezier.PlotCubicBezier();
 
@@ -160,7 +160,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, QuadraticBezierEntity quadratic, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(quadratic, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 var pts = quadratic.PlotQuadraticBezier();
                 for (var i = 1; i < pts.Count; i++)
@@ -175,7 +175,7 @@ public static class RenderExtensions
     public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform,
-            (dc, pen) =>
+            (pen) =>
             {
                 var start = text.Location;
 
@@ -325,7 +325,7 @@ public static class RenderExtensions
         float penSize,
         float viewScale,
         Matrix3 accumulatedTransform,
-        Action<DrawingContext, Pen> render)
+        Action<Pen> render)
     {
         // Local -> world/device
         var m = entity.Transform.GetMatrix() * accumulatedTransform;
@@ -335,7 +335,7 @@ public static class RenderExtensions
 
         using (dc.PushTransform(m.ToAvaloniaMatrix()))
         {
-            render(dc, pen);
+            render(pen);
         }
     }
 }

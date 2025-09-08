@@ -65,13 +65,24 @@ public static class RenderExtensions
 
     public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float scale, Matrix3 accumulatedTransform)
     {
+        // Local -> world/device (keep your order)
         var m = ellipse.Transform.GetMatrix() * accumulatedTransform;
 
-        var circleCentre = new PointDouble(ellipse.Location.X, ellipse.Location.Y) * m;
-        var radius = new PointDouble(ellipse.Radius.X, ellipse.Radius.Y) * m.GetScale();
+        // Keep stroke ~1px on screen if you scale the scene
+        var pen = new Pen(new SolidColorBrush(color), 1.0 / scale);
 
-        var pen = new Pen(new SolidColorBrush(color), 1);
-        dc.DrawEllipse(null, pen, circleCentre.ToPt(scale), radius.X * scale, radius.Y * scale);
+        using (dc.PushTransform(m.ToAvaloniaMatrix()))          // apply rotation + translate (+ scale/shear if any)
+        using (dc.PushTransform(Matrix.CreateScale(scale, scale))) // viewport scale
+        {
+            var cx = ellipse.Location.X;
+            var cy = ellipse.Location.Y;
+            var rx = ellipse.Radius.X;
+            var ry = ellipse.Radius.Y;
+
+            // Axis-aligned in local coords; transform handles rotation
+            var rect = new Rect(cx - rx, cy - ry, rx * 2, ry * 2);
+            dc.DrawEllipse(null, pen, rect);
+        }
     }
 
     public static void Draw(this DrawingContext dc, RectangleEntity rect, Color color, float scale, Matrix3 accumulatedTransform)
@@ -277,4 +288,17 @@ public static class RenderExtensions
     };
 
     public static float ConvertMMToPixels(float mm) => (mm / 25.4f) * 96.0f;
+
+    public static Matrix ToAvaloniaMatrix(this Matrix3 m)
+    {
+        // a, b, c, d, tx, ty
+        return new Matrix(
+            m.Data[0], // a = m00
+            m.Data[3], // b = m10
+            m.Data[1], // c = m01
+            m.Data[4], // d = m11
+            m.Data[2], // tx = m02
+            m.Data[5]  // ty = m12
+        );
+    }
 }

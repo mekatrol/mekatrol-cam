@@ -1,8 +1,11 @@
-﻿using Avalonia.Media;
+﻿using Avalonia.Controls.Shapes;
+using Avalonia.Media;
 using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
 using Microsoft.Extensions.Logging;
+using SkiaSharp;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
@@ -117,7 +120,8 @@ public class SvgParser : ISvgParser
 
                 // The svg element can be muliple depths
                 case "svg":
-                    geometries.AddRange(ParseSvgElement(element));
+                    var childSvg = ParseSvgElement(element);
+                    geometries.AddRange(childSvg.Entities); // flatten nested <svg>
                     break;
 
                 case "circle":
@@ -400,7 +404,7 @@ public class SvgParser : ISvgParser
             throw exception;
         }
 
-        return new PolylineEntity(points.AsReadOnly<PointDouble>(), ParseTransformAttribute(element));
+        return new PolylineEntity(points, ParseTransformAttribute(element));
     }
 
     private static IGeometricEntity ParsePathElement(XElement element)
@@ -430,6 +434,28 @@ public class SvgParser : ISvgParser
         }
     }
 
+    private static double ParseLengthPx(string v, float currentFontPx)
+    {
+        v = v.Trim().ToLowerInvariant();
+        if (v.EndsWith("em"))
+        {
+            var n = double.Parse(v[..^2], CultureInfo.InvariantCulture);
+            return n * currentFontPx;
+        }
+        if (v.EndsWith("px"))
+        {
+            var n = double.Parse(v[..^2], CultureInfo.InvariantCulture);
+            return n;
+        }
+        if (v.EndsWith('%'))
+        {
+            var n = double.Parse(v[..^1], CultureInfo.InvariantCulture);
+            return (n / 100.0) * currentFontPx;
+        }
+        // raw number: treat as px per SVG
+        return double.Parse(v, CultureInfo.InvariantCulture);
+    }
+
     private IGeometricEntity ParseTextSubElement(
         XElement element,
         string tag,
@@ -439,40 +465,22 @@ public class SvgParser : ISvgParser
     {
         AssertIsTag(element, tag);
 
-        var xElement = GetAttributeDoubleValue(element, "x").Value ?? parentX;
-        var yElement = GetAttributeDoubleValue(element, "y").Value ?? parentY;
+        var xAttr = GetAttributeDoubleValue(element, "x").Value;
+        var yAttr = GetAttributeDoubleValue(element, "y").Value;
+        var x = xAttr ?? parentX;
+        var yUser = yAttr ?? parentY;
+
         var transform = ParseTransformAttribute(element);
 
-        var x = xElement;
-        var y = yElement;
-
-        var textAlign = TextAlignment.Left;
-        var textAnchor = GetAttributeValue(element, "text-anchor");
-        if (textAnchor != null)
-        {
-            textAlign = textAnchor.ToLower() switch
-            {
-                "middle" => TextAlignment.Center,
-                "end" => TextAlignment.Right,
-                // "start"
-                _ => TextAlignment.Left,
-            };
-        }
-
-        // The initial font is the parent font if passed, else the default font
+        // -------- font inheritance + overrides (incl. font-size) ----------
         var font = parentFont ?? _currentFont;
 
-        // Use the globally defined css classes to define font if exists
         var className = GetAttributeValue(element, "class");
-        if (className != null && _cssClasses.TryGetValue(className, out var cssFontClass))
+        if (className != null && _cssClasses.TryGetValue(className, out var cssFontClass) && cssFontClass?.Font != null)
         {
-            if (cssFontClass != null && cssFontClass.Font != null)
-            {
-                font = cssFontClass.Font;
-            }
+            font = cssFontClass.Font;
         }
 
-        // The text element may have its own font defined
         var style = GetAttributeValue(element, "style");
         var parsedFont = ParseFontFromStyle(style);
         if (parsedFont != null)
@@ -480,83 +488,162 @@ public class SvgParser : ISvgParser
             font = parsedFont;
         }
 
-        // The text element may have a font size
         var fontSizeValue = GetAttributeValue(element, "font-size");
         if (fontSizeValue != null)
         {
-            CssParser.ExtractFontSize(fontSizeValue, font);
+            CssParser.ExtractFontSize(fontSizeValue, font); // updates font.Size
         }
 
-        // The text in the element may be raw (text directly in value)
-        // or part of a tspan child element
-        var childNodes = element.Nodes().ToList();
-        var childText = new List<IGeometricEntity>();
-
-        foreach (var childNode in childNodes)
+        // -------- horizontal alignment (text-anchor) ----------
+        var align = TextAlignment.Left;
+        var textAnchor = GetAttributeValue(element, "text-anchor");
+        if (textAnchor != null)
         {
-            switch (childNode.NodeType)
+            align = textAnchor.ToLower() switch
             {
-                case XmlNodeType.CDATA:
-                case XmlNodeType.Text:
+                "middle" => TextAlignment.Center,
+                "end" => TextAlignment.Right,
+                _ => TextAlignment.Left,
+            };
+        }
+
+        // -------- vertical alignment (dominant-baseline) ----------
+        // yUser in SVG refers to the baseline unless dominant-baseline changes it.
+        // We convert a requested anchor Y to a baseline Y using font metrics.
+        var domBaseline = (GetAttributeValue(element, "dominant-baseline") ?? "").ToLower();
+
+        using var tf = SKTypeface.FromFamilyName(font.FamilyName, SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
+        using var paint = new SKPaint { Typeface = tf, TextSize = (float)font.Size, IsAntialias = true };
+        paint.GetFontMetrics(out var fm);
+        var baselineY = AdjustBaselineYPx(yUser, domBaseline, (float)font.Size, fm);
+
+        // -------- iterate children: raw text nodes and <tspan> ----------
+        var runs = new List<IGeometricEntity>();
+        var cursorX = x;
+        var cursorBaselineY = baselineY;
+
+        foreach (var node in element.Nodes())
+        {
+            if (node.NodeType == XmlNodeType.Text || node.NodeType == XmlNodeType.CDATA)
+            {
+                var s = ((XText)node).Value;
+                if (string.IsNullOrWhiteSpace(s)) { continue; }
+
+                var t = s.Trim();
+                var textEntity = new TextEntity(cursorX, cursorBaselineY, t, font, align, new GeometryTransform());
+                runs.Add(textEntity);
+
+                // advance x by measured width + a small space (SVG collapses spaces; use em for gap)
+                var w = paint.MeasureText(t);
+                var gap = 0.25f * (float)font.Size; // ~0.25em
+                cursorX += w + gap;
+                continue;
+            }
+
+            if (node.NodeType == XmlNodeType.Element)
+            {
+                var child = (XElement)node;
+                if (child.Name.LocalName != "tspan") { continue; }
+
+                // inherit font, but allow overrides on <tspan>
+                var tspanFont = new FontDescription(font.FamilyName, font.Size, font.Style, font.Weight); // ensure independent size if changed
+                var tspanFontSize = GetAttributeValue(child, "font-size");
+                if (tspanFontSize != null) { CssParser.ExtractFontSize(tspanFontSize, tspanFont); }
+
+                var tspanFontPx = (float)tspanFont.Size;
+
+                // x / y on tspan reset cursor; dx / dy are relative (“em” supported on dy)
+                var tspanX = GetAttributeDoubleValue(child, "x").Value;
+                var tspanY = GetAttributeDoubleValue(child, "y").Value;
+                var dxStr = GetAttributeValue(child, "dx");
+                var dyStr = GetAttributeValue(child, "dy");
+
+                if (!string.IsNullOrWhiteSpace(dxStr)) { cursorX += ParseLengthPx(dxStr!, tspanFontPx); }
+                if (!string.IsNullOrWhiteSpace(dyStr)) { cursorBaselineY += ParseLengthPx(dyStr!, tspanFontPx); }
+
+                if (tspanX.HasValue)
+                {
+                    cursorX = tspanX.Value;
+                }
+
+                if (tspanY.HasValue)
+                {
+                    // recompute baseline using tspan font size
+                    using var tspanPaint = new SKPaint { Typeface = tf, TextSize = tspanFontPx, IsAntialias = true };
+                    tspanPaint.GetFontMetrics(out var tfm);
+                    var tspanDom = (GetAttributeValue(child, "dominant-baseline") ?? domBaseline);
+                    cursorBaselineY = AdjustBaselineYPx(tspanY.Value, tspanDom, tspanFontPx, tfm);
+                }
+
+                if (!string.IsNullOrWhiteSpace(dxStr))
+                {
+                    cursorX += ParseLength(dxStr!, tspanFont.Size);
+                }
+                if (!string.IsNullOrWhiteSpace(dyStr))
+                {
+                    cursorBaselineY += ParseLength(dyStr!, tspanFont.Size);
+                }
+
+                // text-anchor override on tspan
+                var tspanAnchor = GetAttributeValue(child, "text-anchor");
+                var tspanAlign = align;
+                if (tspanAnchor != null)
+                {
+                    tspanAlign = tspanAnchor.ToLower() switch
                     {
-                        // Get text
-                        var text = (childNode as XText)!.Value;
+                        "middle" => TextAlignment.Center,
+                        "end" => TextAlignment.Right,
+                        _ => TextAlignment.Left,
+                    };
+                }
 
-                        if (string.IsNullOrWhiteSpace(text))
-                        {
-                            continue;
-                        }
+                // content of tspan is plain text (SVG disallows nested <tspan> transforms)
+                var t = child.Value;
+                if (string.IsNullOrWhiteSpace(t)) { continue; }
+                t = t.Trim();
 
-                        // Create text child
-                        var textEntity = new TextEntity(x, y, text.Trim(), font, textAlign, new GeometryTransform());
-                        childText.Add(textEntity);
-                        var spaceSize = GeometryUtils.MeasureText("I", textEntity.Font, textAlign, 0, 0, Matrix3.Identity);
-                        x += textEntity.BoundaryUntransformed.Size.X + spaceSize.X;
-                    }
-                    break;
+                var textEntity = new TextEntity(cursorX, cursorBaselineY, t, tspanFont, tspanAlign, new GeometryTransform());
+                runs.Add(textEntity);
 
-                case XmlNodeType.Element:
-
-                    var childElement = (XElement)childNode;
-
-                    // Only process TSpans
-                    if (childElement.Name.LocalName != "tspan")
-                    {
-                        continue;
-                    }
-
-                    // Parse text span as text elements
-                    var texts = ParseTextSubElement(childElement, "tspan", font, x, y);
-                    if (texts.Type == GeometricEntityType.Text)
-                    {
-                        var textEntity = (TextEntity)texts;
-                        childText.Add(textEntity);
-                        var spaceSize = GeometryUtils.MeasureText("I", textEntity.Font, textAlign, 0, 0, Matrix3.Identity);
-                        x += textEntity.BoundaryUntransformed.Size.X + spaceSize.X;
-                    }
-                    else if (texts.Type == GeometricEntityType.Path)
-                    {
-                        var path = (PathEntity)texts;
-
-                        if (path.Entities.Count == 0)
-                        {
-                            continue;
-                        }
-
-                        var spaceSize = GeometryUtils.MeasureText("I", font, textAlign, 0, 0, Matrix3.Identity);
-                        x += path.BoundaryUntransformed.Size.X + spaceSize.X;
-
-                        childText.AddRange(path.Entities);
-                    }
-                    break;
-
-                default:
-                    continue;
+                using var tspanPaint2 = new SKPaint { Typeface = tf, TextSize = (float)tspanFont.Size, IsAntialias = true };
+                var w2 = tspanPaint2.MeasureText(t);
+                var gap2 = 0.25f * (float)tspanFont.Size;
+                cursorX += w2 + gap2;
             }
         }
 
-        var entityPath = new PathEntity(xElement, yElement, childText, false, transform);
-        return entityPath;
+        return new PathEntity(x, yUser, runs, false, transform);
+    }
+
+    private static double ParseLength(string text, double emSize)
+    {
+        // supports raw number (px), px, em.
+        text = text.Trim().ToLowerInvariant();
+
+        if (text.EndsWith("em"))
+        {
+            var n = double.Parse(text[..^2], System.Globalization.CultureInfo.InvariantCulture);
+            return n * emSize;
+        }
+
+        if (text.EndsWith("px"))
+        {
+            var n = double.Parse(text[..^2], System.Globalization.CultureInfo.InvariantCulture);
+            return n; // SVG user units ~ px at 96 DPI
+        }
+
+        return double.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static double AdjustBaselineYPx(double yAnchor, string dominantBaseline, float fontPx, SKFontMetrics fm)
+    {
+        // fm.Ascent < 0, fm.Descent > 0
+        return dominantBaseline switch
+        {
+            "middle" or "central" => yAnchor + (fm.Ascent + fm.Descent) * 0.5f,
+            "hanging" => yAnchor - 0.2f * fontPx,
+            _ => yAnchor, // alphabetic/text-top default -> baseline at y
+        };
     }
 
     private IGeometricEntity ParseTextElement(XElement element)
@@ -911,7 +998,7 @@ public class SvgParser : ISvgParser
         }
 
         var value = double.Parse(match.Groups[1].Value);
-        var units = match.Groups[2].Value;
+        var units = match.Groups[3].Value;
 
         if (units.Trim().Length == 0)
         {

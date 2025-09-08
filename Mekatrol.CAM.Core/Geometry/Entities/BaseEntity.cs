@@ -92,6 +92,8 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
 
         foreach(var poly in points)
         {
+            _untransformedPoints = poly.ToList();
+
             foreach (var point in poly)
             {
                 var transformed = point * cumulativeTransformMatrix;

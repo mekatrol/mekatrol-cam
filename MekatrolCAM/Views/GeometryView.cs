@@ -113,6 +113,7 @@ public sealed class GeometryView : Control
         if (Path.Entities is null || Path.Entities.Count == 0) { return; }
 
         var color = Colors.GreenYellow;
+        var penSize = 2.0f;
 
         // screen = world * Scale + Pan  =>  T(Pan) * S(Scale)
         using (context.PushTransform(Matrix.CreateTranslation(Pan.X, Pan.Y)))
@@ -126,7 +127,7 @@ public sealed class GeometryView : Control
                 var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
                 context.DrawRectangle(null, boundsPen, rect);
 
-                context.Draw(entity, color, Scale, entity.Transform.GetMatrix());
+                context.Draw(entity, color, Scale, penSize, entity.Transform.GetMatrix());
             }
         }
     }

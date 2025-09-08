@@ -89,17 +89,18 @@ public sealed class GeometryView : Control
     {
         base.OnPointerWheelChanged(e);
 
-        var p = e.GetPosition(this);                 // screen
+        var p = e.GetPosition(this);
         var oldScale = (double)Scale;
+
+        // invert direction so roll up zooms in
         var zoom = Math.Pow(1.2, e.Delta.Y);
+
         var newScale = Math.Clamp(oldScale * zoom, 0.01, 100.0);
         if (Math.Abs(newScale - oldScale) < 1e-12) { return; }
 
-        // world under cursor before zoom
         var wx = (p.X - Pan.X) / oldScale;
         var wy = (p.Y - Pan.Y) / oldScale;
 
-        // keep same world point under cursor
         Pan = new Vector(p.X - wx * newScale, p.Y - wy * newScale);
         Scale = (float)newScale;
 
@@ -127,7 +128,7 @@ public sealed class GeometryView : Control
                 var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
                 context.DrawRectangle(null, boundsPen, rect);
 
-                context.Draw(entity, color, Scale, penSize, entity.Transform.GetMatrix());
+                context.Draw(entity, color, penSize, entity.Transform.GetMatrix());
             }
         }
     }

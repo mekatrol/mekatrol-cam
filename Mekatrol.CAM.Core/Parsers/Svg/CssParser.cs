@@ -87,20 +87,32 @@ public class CssParser
         font.FamilyName = family;
     }
 
-    public static void ExtractFontSize(string line, FontDescription font)
+    public static void ExtractFontSize(string input, FontDescription font)
     {
-        var sizeMatch = Regex.Match(line, FontSizePattern);
-        if (sizeMatch.Success)
+        if (string.IsNullOrWhiteSpace(input)) { return; }
+
+        // Accept either "font-size: 14px" or "14px" or "120%"
+        var s = input;
+        var i = s.IndexOf("font-size:", StringComparison.OrdinalIgnoreCase);
+        
+        if (i >= 0)
         {
-            var fontSize = float.Parse(sizeMatch.Groups[1].Value);
-            var sizeUnit = sizeMatch.Groups[2].Value;
-            if (string.IsNullOrWhiteSpace(sizeUnit))
-            {
-                // Default to pixels
-                sizeUnit = "px";
-            }
-            font.Size = RenderExtensions.ConvertGraphicSizeToMM(fontSize, sizeUnit);
+            s = s[(i + "font-size:".Length)..];
         }
+        
+        s = s.Trim();
+
+        // number + unit [+ optional /line-height which we ignore]
+        const string FontSizePattern = @"^\s*([0-9]*\.?[0-9]+)\s*([a-zA-Z%]*)\s*(?:/\s*[0-9]*\.?[0-9]+[a-zA-Z%]*)?\s*$";
+        var m = Regex.Match(s, FontSizePattern);
+        if (!m.Success) { return; }
+
+        var val = float.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        var unit = m.Groups[2].Value;
+        if (string.IsNullOrWhiteSpace(unit)) { unit = "px"; }
+
+        // Resolve to mm. Relative units use current font size as the context.
+        font.Size = RenderExtensions.ConvertGraphicSizeToMM(val, unit, currentFontSizeMm: (float)font.Size);
     }
 
     public static void ExtractFontWeight(string line, FontDescription font)

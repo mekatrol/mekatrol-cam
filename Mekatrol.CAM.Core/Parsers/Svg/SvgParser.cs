@@ -1,5 +1,4 @@
-﻿using Avalonia.Controls.Shapes;
-using Avalonia.Media;
+﻿using Avalonia.Media;
 using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
@@ -17,15 +16,14 @@ public class SvgParser : ISvgParser
     internal const string DoublePattern = @"([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)";
     internal const string DoublePairPattern = @"([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s*,{0,1}\s*([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)";
     internal const string DoubleWithUnitsPattern = @"([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)([A-Za-z%]*)";
+
     private readonly ILogger _logger;
     private readonly FontDescription _currentFont;
-
     private IDictionary<string, CssClass> _cssClasses = new Dictionary<string, CssClass>(StringComparer.OrdinalIgnoreCase);
 
     public SvgParser(ILogger<SvgParser> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
         var fontFamily = RenderExtensions.BestFontFamily(RenderExtensions.DefaultFontFamilyName);
         _currentFont = new FontDescription(fontFamily.Name, 30, FontStyle.Normal, FontWeight.Normal);
     }
@@ -38,7 +36,6 @@ public class SvgParser : ISvgParser
         }
 
         var xmlDocument = XDocument.Load(stream, LoadOptions.SetLineInfo);
-
         if (xmlDocument.Root == null)
         {
             return new PathEntity();
@@ -56,7 +53,7 @@ public class SvgParser : ISvgParser
 
             foreach (var entity in pathEntity.Entities)
             {
-                // Update translate to minimum of location and current translate value 
+                // Update translate to minimum of location and current translate value
                 translate = translate.Min(entity.Location);
             }
 
@@ -71,18 +68,15 @@ public class SvgParser : ISvgParser
 
     private IGeometricPathEntity ParseSvgElement(XElement element)
     {
-        // We are expecting the svg tag
         AssertIsTag(element, "svg");
 
-        // Get view box
         var viewBox = GetAttributeValue(element, "viewBox");
-
         if (!string.IsNullOrWhiteSpace(viewBox))
         {
             var parts = viewBox.Split([' '], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 4)
             {
-                var values = parts.Select(double.Parse).ToArray();
+                var _ = parts.Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
             }
         }
 
@@ -91,13 +85,10 @@ public class SvgParser : ISvgParser
 
     private IGeometricEntity ParseGElement(XElement element)
     {
-        // We are expecting the svg tag
         AssertIsTag(element, "g");
 
         var transform = ParseTransformAttribute(element);
-
         var children = ParseSvgElementChildren(element);
-
         var path = new PathEntity(0, 0, children.ToList(), false, transform);
 
         return path;
@@ -118,11 +109,12 @@ public class SvgParser : ISvgParser
                     geometries.Add(ParseGElement(element));
                     break;
 
-                // The svg element can be muliple depths
                 case "svg":
-                    var childSvg = ParseSvgElement(element);
-                    geometries.AddRange(childSvg.Entities); // flatten nested <svg>
-                    break;
+                    {
+                        var childSvg = ParseSvgElement(element);
+                        geometries.AddRange(childSvg.Entities); // flatten nested <svg>
+                        break;
+                    }
 
                 case "circle":
                     geometries.Add(ParseCircleElement(element));
@@ -225,10 +217,8 @@ public class SvgParser : ISvgParser
         AssertIsTag(element, "circle");
 
         var x = GetAttributeDoubleValue(element, "cx").Value ?? 0.0;
-
         var y = GetAttributeDoubleValue(element, "cy").Value ?? 0.0;
 
-        // r is not optional for a circle
         var r = GetAttributeDoubleValue(element, "r").Value;
 
         var lineInfo = (IXmlLineInfo)element;
@@ -287,77 +277,6 @@ public class SvgParser : ISvgParser
         var lineInfo = (IXmlLineInfo)element;
         var exception = new XmlException("Invalid polygon points value.", null, lineInfo.LineNumber, lineInfo.LinePosition);
 
-        List<PointDouble> points = [];
-
-        var offset = 0;
-        var isPoint = true;
-        foreach (var match in matches)
-        {
-            if (match.Index != offset)
-            {
-                throw exception;
-            }
-
-            offset += match.Length;
-
-            if (!isPoint)
-            {
-                if (!string.IsNullOrWhiteSpace(match.Value) && match.Value != ",")
-                {
-                    throw exception;
-                }
-            }
-            else
-            {
-                var pointValues = match.Value.Split(',');
-                if (pointValues.Length != 2)
-                {
-                    throw exception;
-                }
-
-                if (!double.TryParse(pointValues[0], out var x) ||
-                    !double.TryParse(pointValues[1], out var y))
-                {
-                    throw exception;
-                }
-
-                points.Add(new PointDouble(x, y));
-            }
-
-            // Switch between point and space
-            isPoint = !isPoint;
-        }
-
-        if (offset != pointsAttribute.Value.Length)
-        {
-            throw exception;
-        }
-
-        return new PolygonEntity(points, ParseTransformAttribute(element));
-    }
-
-    private static IGeometricEntity ParsePolylineElement(XElement element)
-    {
-        AssertIsTag(element, "polyline");
-
-        var pointsAttribute = element.Attribute("points");
-
-        // If the points attribute is missing or empty then return empty polygon
-        if (pointsAttribute == null || string.IsNullOrWhiteSpace(pointsAttribute.Value))
-        {
-            return new PolylineEntity();
-        }
-
-        // Make sure that the points match the pattern for points
-        const string pointsPattern = @$"({DoublePairPattern})|(\s+|,+)";
-        var matches = Regex
-            .Matches(pointsAttribute.Value, pointsPattern)
-            .Cast<Match>()
-            .ToList();
-
-        var lineInfo = (IXmlLineInfo)element;
-        var exception = new XmlException("Invalid polyline points value.", null, lineInfo.LineNumber, lineInfo.LinePosition);
-
         var points = new List<PointDouble>();
 
         var offset = 0;
@@ -381,13 +300,10 @@ public class SvgParser : ISvgParser
             else
             {
                 var pointValues = match.Value.Split(',');
-                if (pointValues.Length != 2)
-                {
-                    throw exception;
-                }
+                if (pointValues.Length != 2) { throw exception; }
 
-                if (!double.TryParse(pointValues[0], out var x) ||
-                    !double.TryParse(pointValues[1], out var y))
+                if (!double.TryParse(pointValues[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ||
+                    !double.TryParse(pointValues[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
                 {
                     throw exception;
                 }
@@ -399,10 +315,62 @@ public class SvgParser : ISvgParser
             isPoint = !isPoint;
         }
 
-        if (offset != pointsAttribute.Value.Length)
+        if (offset != pointsAttribute.Value.Length) { throw exception; }
+
+        return new PolygonEntity(points, ParseTransformAttribute(element));
+    }
+
+    private static IGeometricEntity ParsePolylineElement(XElement element)
+    {
+        AssertIsTag(element, "polyline");
+
+        var pointsAttribute = element.Attribute("points");
+
+        // If the points attribute is missing or empty then return empty polygon
+        if (pointsAttribute == null || string.IsNullOrWhiteSpace(pointsAttribute.Value))
         {
-            throw exception;
+            return new PolylineEntity();
         }
+
+        // Make sure that the points match the pattern for points
+        const string pointsPattern = @$"({DoublePairPattern})|(\s+|,+)";
+        var matches = Regex.Matches(pointsAttribute.Value, pointsPattern).Cast<Match>().ToList();
+
+        var lineInfo = (IXmlLineInfo)element;
+        var exception = new XmlException("Invalid polyline points value.", null, lineInfo.LineNumber, lineInfo.LinePosition);
+
+        var points = new List<PointDouble>();
+
+        var offset = 0;
+        var isPoint = true;
+        foreach (var match in matches)
+        {
+            if (match.Index != offset) { throw exception; }
+            offset += match.Length;
+
+            if (!isPoint)
+            {
+                if (!string.IsNullOrWhiteSpace(match.Value) && match.Value != ",") { throw exception; }
+            }
+            else
+            {
+                var pointValues = match.Value.Split(',');
+                if (pointValues.Length != 2) { throw exception; }
+
+                if (!double.TryParse(pointValues[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ||
+                    !double.TryParse(pointValues[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+                {
+                    throw exception;
+                }
+
+                points.Add(new PointDouble(x, y));
+            }
+
+            // Switch between point and space
+            isPoint = !isPoint;
+        }
+
+        if (offset != pointsAttribute.Value.Length) { throw exception; }
 
         return new PolylineEntity(points, ParseTransformAttribute(element));
     }
@@ -420,10 +388,7 @@ public class SvgParser : ISvgParser
 
         try
         {
-            // Parse the path to a set of geometries
             var (startLocation, geometries, closed) = new SvgPathParser(pathAttribute.Value).Parse();
-
-            // Keep path container transform identity after baking
             var first = geometries.FirstOrDefault();
             return new PathEntity(first?.Location.X ?? 0, first?.Location.Y ?? 0, geometries, closed, new GeometryTransform());
         }
@@ -437,6 +402,7 @@ public class SvgParser : ISvgParser
     private static double ParseLengthPx(string v, float currentFontPx)
     {
         v = v.Trim().ToLowerInvariant();
+
         if (v.EndsWith("em"))
         {
             var n = double.Parse(v[..^2], CultureInfo.InvariantCulture);
@@ -452,6 +418,7 @@ public class SvgParser : ISvgParser
             var n = double.Parse(v[..^1], CultureInfo.InvariantCulture);
             return (n / 100.0) * currentFontPx;
         }
+
         // raw number: treat as px per SVG
         return double.Parse(v, CultureInfo.InvariantCulture);
     }
@@ -472,7 +439,6 @@ public class SvgParser : ISvgParser
 
         var transform = ParseTransformAttribute(element);
 
-        // -------- font inheritance + overrides (incl. font-size) ----------
         var font = parentFont ?? _currentFont;
 
         var className = GetAttributeValue(element, "class");
@@ -491,10 +457,9 @@ public class SvgParser : ISvgParser
         var fontSizeValue = GetAttributeValue(element, "font-size");
         if (fontSizeValue != null)
         {
-            CssParser.ExtractFontSize(fontSizeValue, font); // updates font.Size
+            CssParser.ExtractFontSize(fontSizeValue, font);
         }
 
-        // -------- horizontal alignment (text-anchor) ----------
         var align = TextAlignment.Left;
         var textAnchor = GetAttributeValue(element, "text-anchor");
         if (textAnchor != null)
@@ -507,17 +472,19 @@ public class SvgParser : ISvgParser
             };
         }
 
-        // -------- vertical alignment (dominant-baseline) ----------
-        // yUser in SVG refers to the baseline unless dominant-baseline changes it.
-        // We convert a requested anchor Y to a baseline Y using font metrics.
         var domBaseline = (GetAttributeValue(element, "dominant-baseline") ?? "").ToLower();
 
-        using var tf = SKTypeface.FromFamilyName(font.FamilyName, SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
+        using var tf = SKTypeface.FromFamilyName(
+            font.FamilyName,
+            SKFontStyleWeight.Normal,
+            SKFontStyleWidth.Normal,
+            SKFontStyleSlant.Upright);
+
         using var paint = new SKPaint { Typeface = tf, TextSize = (float)font.Size, IsAntialias = true };
         paint.GetFontMetrics(out var fm);
+
         var baselineY = AdjustBaselineYPx(yUser, domBaseline, (float)font.Size, fm);
 
-        // -------- iterate children: raw text nodes and <tspan> ----------
         var runs = new List<IGeometricEntity>();
         var cursorX = x;
         var cursorBaselineY = baselineY;
@@ -533,9 +500,8 @@ public class SvgParser : ISvgParser
                 var textEntity = new TextEntity(cursorX, cursorBaselineY, t, font, align, new GeometryTransform());
                 runs.Add(textEntity);
 
-                // advance x by measured width + a small space (SVG collapses spaces; use em for gap)
                 var w = paint.MeasureText(t);
-                var gap = 0.25f * (float)font.Size; // ~0.25em
+                var gap = 0.25f * (float)font.Size;
                 cursorX += w + gap;
                 continue;
             }
@@ -545,46 +511,37 @@ public class SvgParser : ISvgParser
                 var child = (XElement)node;
                 if (child.Name.LocalName != "tspan") { continue; }
 
-                // inherit font, but allow overrides on <tspan>
-                var tspanFont = new FontDescription(font.FamilyName, font.Size, font.Style, font.Weight); // ensure independent size if changed
+                var tspanFont = new FontDescription(font.FamilyName, font.Size, font.Style, font.Weight);
+
                 var tspanFontSize = GetAttributeValue(child, "font-size");
-                if (tspanFontSize != null) { CssParser.ExtractFontSize(tspanFontSize, tspanFont); }
+                if (tspanFontSize != null)
+                {
+                    CssParser.ExtractFontSize(tspanFontSize, tspanFont);
+                }
 
-                var tspanFontPx = (float)tspanFont.Size;
-
-                // x / y on tspan reset cursor; dx / dy are relative (“em” supported on dy)
                 var tspanX = GetAttributeDoubleValue(child, "x").Value;
                 var tspanY = GetAttributeDoubleValue(child, "y").Value;
                 var dxStr = GetAttributeValue(child, "dx");
                 var dyStr = GetAttributeValue(child, "dy");
 
-                if (!string.IsNullOrWhiteSpace(dxStr)) { cursorX += ParseLengthPx(dxStr!, tspanFontPx); }
-                if (!string.IsNullOrWhiteSpace(dyStr)) { cursorBaselineY += ParseLengthPx(dyStr!, tspanFontPx); }
-
-                if (tspanX.HasValue)
-                {
-                    cursorX = tspanX.Value;
-                }
-
+                if (tspanX.HasValue) { cursorX = tspanX.Value; }
                 if (tspanY.HasValue)
                 {
-                    // recompute baseline using tspan font size
-                    using var tspanPaint = new SKPaint { Typeface = tf, TextSize = tspanFontPx, IsAntialias = true };
+                    using var tspanPaint = new SKPaint { Typeface = tf, TextSize = (float)tspanFont.Size, IsAntialias = true };
                     tspanPaint.GetFontMetrics(out var tfm);
                     var tspanDom = (GetAttributeValue(child, "dominant-baseline") ?? domBaseline);
-                    cursorBaselineY = AdjustBaselineYPx(tspanY.Value, tspanDom, tspanFontPx, tfm);
+                    cursorBaselineY = AdjustBaselineYPx(tspanY.Value, tspanDom, (float)tspanFont.Size, tfm);
                 }
 
                 if (!string.IsNullOrWhiteSpace(dxStr))
                 {
-                    cursorX += ParseLength(dxStr!, tspanFont.Size);
+                    cursorX += ParseLengthPx(dxStr!, (float)tspanFont.Size);
                 }
                 if (!string.IsNullOrWhiteSpace(dyStr))
                 {
-                    cursorBaselineY += ParseLength(dyStr!, tspanFont.Size);
+                    cursorBaselineY += ParseLengthPx(dyStr!, (float)tspanFont.Size);
                 }
 
-                // text-anchor override on tspan
                 var tspanAnchor = GetAttributeValue(child, "text-anchor");
                 var tspanAlign = align;
                 if (tspanAnchor != null)
@@ -597,7 +554,6 @@ public class SvgParser : ISvgParser
                     };
                 }
 
-                // content of tspan is plain text (SVG disallows nested <tspan> transforms)
                 var t = child.Value;
                 if (string.IsNullOrWhiteSpace(t)) { continue; }
                 t = t.Trim();
@@ -615,34 +571,13 @@ public class SvgParser : ISvgParser
         return new PathEntity(x, yUser, runs, false, transform);
     }
 
-    private static double ParseLength(string text, double emSize)
-    {
-        // supports raw number (px), px, em.
-        text = text.Trim().ToLowerInvariant();
-
-        if (text.EndsWith("em"))
-        {
-            var n = double.Parse(text[..^2], System.Globalization.CultureInfo.InvariantCulture);
-            return n * emSize;
-        }
-
-        if (text.EndsWith("px"))
-        {
-            var n = double.Parse(text[..^2], System.Globalization.CultureInfo.InvariantCulture);
-            return n; // SVG user units ~ px at 96 DPI
-        }
-
-        return double.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
-    }
-
     private static double AdjustBaselineYPx(double yAnchor, string dominantBaseline, float fontPx, SKFontMetrics fm)
     {
-        // fm.Ascent < 0, fm.Descent > 0
         return dominantBaseline switch
         {
             "middle" or "central" => yAnchor + (fm.Ascent + fm.Descent) * 0.5f,
             "hanging" => yAnchor - 0.2f * fontPx,
-            _ => yAnchor, // alphabetic/text-top default -> baseline at y
+            _ => yAnchor,
         };
     }
 
@@ -708,9 +643,7 @@ public class SvgParser : ISvgParser
             transformAttr = transformAttr[(closeBracketIndex + 1)..];
         }
 
-#pragma warning disable IDE0059 // Unnecessary assignment of a value
-        var transformOrigin = ParseTransformOrigin(element);
-#pragma warning restore IDE0059 // Unnecessary assignment of a value
+        var _ = ParseTransformOrigin(element);
 
         // A negative scale flips the geometry
         var flipX = false;
@@ -787,7 +720,7 @@ public class SvgParser : ISvgParser
             .Split([' '], StringSplitOptions.RemoveEmptyEntries)
             .Select(x =>
             {
-                if (double.TryParse(x, out var value))
+                if (double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
                 {
                     return value;
                 }
@@ -825,7 +758,7 @@ public class SvgParser : ISvgParser
         var values = raw.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
 
         var doubleValues = values
-            .Select(x => double.TryParse(x, out var v) ? v : defaultValue)
+            .Select(x => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : defaultValue)
             .ToList();
 
         // Make sure we have at least expected array length
@@ -979,16 +912,10 @@ public class SvgParser : ISvgParser
     private static (double? Value, string? Units) GetAttributeDoubleValue(XElement element, string attributeName)
     {
         var attribute = element.Attribute(attributeName);
-        if (attribute == null)
-        {
-            return (null, null);
-        }
+        if (attribute == null) { return (null, null); }
 
         var textValue = attribute.Value?.Trim();
-        if (textValue == null)
-        {
-            return (null, null);
-        }
+        if (textValue == null) { return (null, null); }
 
         var match = Regex.Match(textValue, DoubleWithUnitsPattern);
         if (!match.Success || match.Length != textValue.Length)
@@ -997,13 +924,10 @@ public class SvgParser : ISvgParser
             throw new XmlException($"{element.Name.LocalName} '{attributeName}' attribute must be a valid floating point number", null, lineInfo.LineNumber, lineInfo.LinePosition);
         }
 
-        var value = double.Parse(match.Groups[1].Value);
-        var units = match.Groups[3].Value;
+        var value = double.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+        var units = match.Groups[3].Value; // units are group 3
 
-        if (units.Trim().Length == 0)
-        {
-            units = null;
-        }
+        if (string.IsNullOrWhiteSpace(units)) { units = null; }
 
         return (value, units);
     }
@@ -1011,16 +935,10 @@ public class SvgParser : ISvgParser
     private static string? GetAttributeValue(XElement element, string attributeName)
     {
         var attribute = element.Attribute(attributeName);
-        if (attribute == null)
-        {
-            return null;
-        }
+        if (attribute == null) { return null; }
 
         var textValue = attribute.Value?.Trim();
-        if (textValue == null)
-        {
-            return null;
-        }
+        if (textValue == null) { return null; }
 
         return textValue;
     }

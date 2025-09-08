@@ -112,22 +112,21 @@ public sealed class GeometryView : Control
         context.DrawRectangle(Brushes.Black, null, Bounds);
         if (Path.Entities is null || Path.Entities.Count == 0) { return; }
 
+        var color = Colors.GreenYellow;
+
         // screen = world * Scale + Pan  =>  T(Pan) * S(Scale)
         using (context.PushTransform(Matrix.CreateTranslation(Pan.X, Pan.Y)))
         using (context.PushTransform(Matrix.CreateScale(Scale, Scale)))
         {
             var boundsPen = new Pen(Brushes.DarkGray, 0.2 / Scale);
 
-            var i = 0;
             foreach (var entity in Path.Entities)
             {
                 var b = entity.BoundaryUntransformed; // world rect
                 var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
                 context.DrawRectangle(null, boundsPen, rect);
 
-                var color = RenderColors.Palette[i++];
                 context.Draw(entity, color, Scale, entity.Transform.GetMatrix());
-                if (i >= RenderColors.Palette.Length) { i = 0; }
             }
         }
     }

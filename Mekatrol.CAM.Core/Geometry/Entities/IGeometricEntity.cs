@@ -8,9 +8,9 @@ public interface IGeometricEntity
 
     PointDouble Location { get; }
 
-    IReadOnlyList<PointDouble> UntransformedPoints { get; }
+    IReadOnlyList<PointDouble[]> UntransformedPolylines { get; }
 
-    IReadOnlyList<PointDouble> TransformedPoints { get; }
+    IReadOnlyList<PointDouble[]> TransformedPolylines { get; }
 
     PointDouble MinUntransformed { get; }
 

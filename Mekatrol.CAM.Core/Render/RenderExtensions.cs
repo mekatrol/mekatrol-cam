@@ -45,11 +45,12 @@ public static class RenderExtensions
         dc.DrawTransformed(arc, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                var pts = arc.TransformedPoints;
-
-                for (var i = 1; i < pts.Count; i++)
+                foreach (var poly in arc.TransformedPolylines)
                 {
-                    dc.DrawLine(pen, pts[i - 1].ToPt(), pts[i].ToPt());
+                    for (var i = 1; i < poly.Length; i++)
+                    {
+                        dc.DrawLine(pen, poly[i - 1].ToPt(), poly[i].ToPt());
+                    }
                 }
             });
     }
@@ -87,14 +88,17 @@ public static class RenderExtensions
         dc.DrawTransformed(rect, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                for (var i = 0; i < rect.UntransformedPoints.Count; i++)
+                foreach (var poly in rect.UntransformedPolylines)
                 {
-                    var j = (i + 1) % rect.UntransformedPoints.Count;
+                    for (var i = 0; i < poly.Length; i++)
+                    {
+                        var j = (i + 1) % poly.Length;
 
-                    var p1 = rect.UntransformedPoints[i];
-                    var p2 = rect.UntransformedPoints[j];
+                        var p1 = poly[i];
+                        var p2 = poly[j];
 
-                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                        dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                    }
                 }
             });
     }
@@ -145,14 +149,15 @@ public static class RenderExtensions
         dc.DrawTransformed(bezier, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                var pts = bezier.UntransformedPoints;
-
-                for (var i = 1; i < pts.Count; i++)
+                foreach (var poly in bezier.UntransformedPolylines)
                 {
-                    var p1 = pts[i - 1];
-                    var p2 = pts[i];
+                    for (var i = 1; i < poly.Length; i++)
+                    {
+                        var p1 = poly[i - 1];
+                        var p2 = poly[i];
 
-                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                        dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                    }
                 }
             });
     }
@@ -162,12 +167,14 @@ public static class RenderExtensions
         dc.DrawTransformed(quadratic, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                var pts = quadratic.UntransformedPoints;
-                for (var i = 1; i < pts.Count; i++)
+                foreach (var poly in quadratic.UntransformedPolylines)
                 {
-                    var p1 = pts[i - 1];
-                    var p2 = pts[i];
-                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                    for (var i = 1; i < poly.Length; i++)
+                    {
+                        var p1 = poly[i - 1];
+                        var p2 = poly[i];
+                        dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                    }
                 }
             });
     }
@@ -177,26 +184,21 @@ public static class RenderExtensions
         dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                var start = text.Location;
-
-                for (var i = 0; i < text.UntransformedPoints.Count; i++)
+                foreach (var poly in text.UntransformedPolylines)
                 {
-                    var kind = text.PointTypes[i];
-                    var v1 = text.UntransformedPoints[i];
-                    var v2 = (i == text.UntransformedPoints.Count - 1 || (kind & PointType.ClosePoint) != 0) ? start : text.UntransformedPoints[i + 1];
-
-                    switch (kind & PointType.LowOrderMask)
+                    for (var i = 1; i < poly.Length; i++)
                     {
-                        case PointType.StartOfFigure:
-                            start = v1;
-                            dc.DrawLine(pen, v1.ToPt(), v2.ToPt());
-                            break;
-                        case PointType.BezierPoint:
-                        case PointType.LinePoint:
-                            dc.DrawLine(pen, v1.ToPt(), v2.ToPt());
-                            break;
-                        default:
-                            continue;
+                        var p1 = poly[i - 1];
+                        var p2 = poly[i];
+                        dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                    }
+
+                    var first = poly[0];
+                    var last = poly[^1];
+
+                    if(last != first)
+                    {
+                        dc.DrawLine(pen, last.ToPt(), first.ToPt());
                     }
                 }
             });

@@ -596,7 +596,7 @@ public static class GeometryUtils
             maxY = Math.Max(maxX, point.X);
         }
 
-        return new PointDouble(maxX - minX, maxY - minY); ;
+        return new PointDouble(maxX - minX, maxY - minY);
     }
 
     public static IBoundary GetBoundary(double x1, double y1, double x2, double y2)

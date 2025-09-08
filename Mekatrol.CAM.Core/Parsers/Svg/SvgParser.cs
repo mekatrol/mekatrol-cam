@@ -441,6 +441,7 @@ public class SvgParser : ISvgParser
 
         var xElement = GetAttributeDoubleValue(element, "x").Value ?? parentX;
         var yElement = GetAttributeDoubleValue(element, "y").Value ?? parentY;
+        var transform = ParseTransformAttribute(element);
 
         var x = xElement;
         var y = yElement;
@@ -554,7 +555,7 @@ public class SvgParser : ISvgParser
             }
         }
 
-        var entityPath = new PathEntity(xElement, yElement, childText, false, new GeometryTransform());
+        var entityPath = new PathEntity(xElement, yElement, childText, false, transform);
         return entityPath;
     }
 

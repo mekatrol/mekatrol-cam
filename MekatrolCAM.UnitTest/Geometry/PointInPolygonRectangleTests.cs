@@ -12,7 +12,7 @@ public class PointInPolygonRectangleTests
     {
         var rect = new RectangleEntity(0, 0, 10, 10, 0, 0, new GeometryTransform());
         rect.InitializeState(new GeometryTransform());
-        var points = rect.TransformedPoints;
+        var points = rect.TransformedPolylines[0];
 
         var minX = rect.MinUntransformed.X;
         var minY = rect.MinUntransformed.Y;
@@ -125,7 +125,7 @@ public class PointInPolygonRectangleTests
     {
         var rect = new RectangleEntity(-10, -10, 20, 20, 0, 0, new GeometryTransform());
         rect.InitializeState(new GeometryTransform());
-        var points = rect.TransformedPoints;
+        var points = rect.TransformedPolylines;
 
         var minX = rect.MinUntransformed.X;
         var minY = rect.MinUntransformed.Y;
@@ -240,7 +240,7 @@ public class PointInPolygonRectangleTests
 
         var rect = new RectangleEntity(-10, -10, 20, 20, 0, 0, transform);
         rect.InitializeState(new GeometryTransform());
-        var points = rect.TransformedPoints;
+        var points = rect.TransformedPolylines;
 
         var result = GeometryUtils.PointInPolygon(new PointDouble(0, -14.142135623730951), points);
         Assert.AreEqual(PointInPolgygonResult.Vertex, result);
@@ -262,7 +262,7 @@ public class PointInPolygonRectangleTests
 
         var rect = new RectangleEntity(90, 90, 20, 20, 0, 0, transform);
         rect.InitializeState(new GeometryTransform());
-        var points = rect.TransformedPoints;
+        var points = rect.TransformedPolylines;
 
         var result = GeometryUtils.PointInPolygon(new PointDouble(0, 127.27922061357856), points);
         Assert.AreEqual(PointInPolgygonResult.Vertex, result);
@@ -284,7 +284,7 @@ public class PointInPolygonRectangleTests
 
         var rect = new RectangleEntity(-110, -110, 20, 20, 0, 0, transform);
         rect.InitializeState(new GeometryTransform());
-        var points = rect.TransformedPoints;
+        var points = rect.TransformedPolylines[0];
 
         var result = GeometryUtils.PointInPolygon(new PointDouble(0, -155.56349186104046), points);
         Assert.AreEqual(PointInPolgygonResult.Vertex, result);

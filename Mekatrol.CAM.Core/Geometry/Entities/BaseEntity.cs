@@ -10,19 +10,19 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
     protected PointDouble _minTransformed = new();
     protected PointDouble _maxTransformed = new();
 
-    // The points before transforms applied
-    protected List<PointDouble> _untransformedPoints = [];
+    // The polyline points before transforms applied
+    protected List<PointDouble[]> _untransformedPolylines = [];
 
-    // The points once all transforms applied
-    protected List<PointDouble> _transformedPoints = [];
+    // The polyline points once all transforms applied
+    protected List<PointDouble[]> _transformedPolylines = [];
 
     public GeometricEntityType Type { get; set; } = type;
 
     public Guid Id { get; set; } = (id != null && id != Guid.Empty) ? id.Value : Guid.NewGuid();
 
-    public IReadOnlyList<PointDouble> UntransformedPoints { get { return _untransformedPoints; } }
+    public IReadOnlyList<PointDouble[]> UntransformedPolylines { get { return _untransformedPolylines; } }
 
-    public IReadOnlyList<PointDouble> TransformedPoints { get { return _transformedPoints; } }
+    public IReadOnlyList<PointDouble[]> TransformedPolylines { get { return _transformedPolylines; } }
 
     public virtual PointDouble Location { get; set; } = new PointDouble(location.X, location.Y);
 
@@ -49,11 +49,14 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
     {
         Location += translate;
 
-        for (var i = 0; i < _transformedPoints.Count; i++)
+        foreach (var poly in _transformedPolylines)
         {
-            var point = _transformedPoints[i];
-            point.X += translate.X;
-            point.Y += translate.Y;
+            for (var i = 0; i < poly.Length; i++)
+            {
+                var point = poly[i];
+                point.X += translate.X;
+                point.Y += translate.Y;
+            }
         }
     }
 
@@ -79,10 +82,14 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
 
     public virtual void InitializeState(GeometryTransform ancestorCumulativeTransform)
     {
-        var points = ToPoints();
-        _transformedPoints = [];
+        var polylines = ToPoints();
+        var n = polylines.Count;
 
-        // Calculate transform with ancestor and this
+        // Create each polyline set with the number of polylines
+        _untransformedPolylines = new List<PointDouble[]>(capacity: n);
+        _transformedPolylines = new List<PointDouble[]>(capacity: n);
+
+        // Compute transform with ancestor and this
         var cumulativeTransformMatrix = (Transform * ancestorCumulativeTransform).GetMatrix();
 
         _minUntransformed = new PointDouble(double.MaxValue, double.MaxValue);
@@ -90,21 +97,27 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
         _minTransformed = new PointDouble(double.MaxValue, double.MaxValue);
         _maxTransformed = new PointDouble(double.MinValue, double.MinValue);
 
-        foreach (var poly in points)
+        for (var i = 0; i < n; i++)
         {
-            _untransformedPoints = poly.ToList();
+            var poly = polylines[i];
 
-            foreach (var point in poly)
+            // Allocate point array within polyline
+            _untransformedPolylines.Add(new PointDouble[poly.Length]);
+            _transformedPolylines.Add(new PointDouble[poly.Length]);
+
+            for (var j = 0; j < poly.Length; j++)
             {
-                var transformed = point * cumulativeTransformMatrix;
+                var pointUntransformed = poly[j];
+                var pointTransformed = pointUntransformed * cumulativeTransformMatrix;
 
-                _minUntransformed = _minUntransformed.Min(point);
-                _maxUntransformed = _maxUntransformed.Max(point);
+                _minUntransformed = _minUntransformed.Min(pointUntransformed);
+                _maxUntransformed = _maxUntransformed.Max(pointUntransformed);
 
-                _minTransformed = _minTransformed.Min(point);
-                _maxTransformed = _maxTransformed.Max(point);
+                _minTransformed = _minTransformed.Min(pointTransformed);
+                _maxTransformed = _maxTransformed.Max(pointTransformed);
 
-                _transformedPoints.Add(transformed);
+                _untransformedPolylines[i][j] = pointUntransformed;
+                _transformedPolylines[i][j] = pointTransformed;
             }
         }
 

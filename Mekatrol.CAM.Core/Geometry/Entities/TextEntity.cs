@@ -3,7 +3,15 @@ using Mekatrol.CAM.Core.Render;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class TextEntity : BaseEntity
+public class TextEntity(
+    double x,
+    double y,
+    string value,
+    FontDescription font,
+    TextAlignment alignment,
+    GeometryTransform transform,
+    Guid? id = null)
+    : BaseEntity(GeometricEntityType.Text, id, new PointDouble(x, y), transform)
 {
     /// <summary>
     /// This empty constructor is used by the serializer
@@ -14,20 +22,14 @@ public class TextEntity : BaseEntity
 
     }
 
-    public TextEntity(
-        double x,
-        double y,
-        string value,
-        FontDescription font,
-        TextAlignment alignment,
-        GeometryTransform transform,
-        Guid? id = null)
-        : base(GeometricEntityType.Text, id, new PointDouble(x, y), transform)
-    {
-        Value = value;
-        Font = font;
-        Alignment = alignment;
+    public string Value { get; set; } = value;
 
+    public FontDescription Font { get; set; } = font;
+
+    public TextAlignment Alignment { get; } = alignment;
+
+    public override IReadOnlyList<PointDouble[]> ToPoints()
+    {
         // Create untransformed text points
         var (points, pointTypes) = GeometryUtils.PlotText(
             Value,
@@ -36,33 +38,19 @@ public class TextEntity : BaseEntity
             0,
             0,
             new Matrix3());
-
-        _untransformedPoints = points;
-        PointTypes = pointTypes;
-    }
-
-    public string Value { get; set; }
-
-    public FontDescription Font { get; set; }
-
-    public TextAlignment Alignment { get; }
-
-    public IList<PointType> PointTypes { get; set; }
-
-    public override IReadOnlyList<PointDouble[]> ToPoints()
-    {
+        
         // A piece of text can be made up of multiple polygons depending on the font
         // We need to break the point sets into multiple polygons
 
         var polygons = new List<PointDouble[]>();
         var polygon = new List<PointDouble>();
 
-        for (var i = 0; i < PointTypes.Count; i++)
+        for (var i = 0; i < pointTypes.Count; i++)
         {
-            var pt = PointTypes[i];
-            var p = UntransformedPoints[i];
+            var pointType = pointTypes[i];
+            var point = points[i];
 
-            if (pt == PointType.StartOfFigure)
+            if (pointType == PointType.StartOfFigure)
             {
                 if (polygon.Count > 0)
                 {
@@ -72,7 +60,7 @@ public class TextEntity : BaseEntity
                 polygon.Clear();
             }
 
-            polygon.Add(p);
+            polygon.Add(point);
         }
 
         if (polygon.Count > 0)

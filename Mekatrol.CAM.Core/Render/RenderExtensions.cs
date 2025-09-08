@@ -26,7 +26,7 @@ public static class RenderExtensions
             case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, penSize, viewScale, accumulatedTransform); break;
             case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, penSize, viewScale, accumulatedTransform); break;
             case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, penSize, viewScale, accumulatedTransform); break;
-            case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, penSize, viewScale); break;
+            case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, penSize, viewScale, accumulatedTransform); break;
         }
     }
 
@@ -101,12 +101,11 @@ public static class RenderExtensions
 
     public static void Draw(this DrawingContext dc, LineEntity line, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
-        var m = line.Transform.GetMatrix() * accumulatedTransform;
-        var p1 = line.Location * m;
-        var p2 = line.EndLocation * m;
-
-        var pen = new Pen(new SolidColorBrush(color), penSize);
-        dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+        dc.DrawTransformed(line, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+                dc.DrawLine(pen, line.Location.ToPt(), line.EndLocation.ToPt());
+            });
     }
 
     public static void Draw(this DrawingContext dc, PolybaseEntity poly, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
@@ -115,6 +114,11 @@ public static class RenderExtensions
         {
             return;
         }
+
+        dc.DrawTransformed(poly, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+            });
 
         var m = poly.Transform.GetMatrix() * accumulatedTransform;
 
@@ -142,6 +146,11 @@ public static class RenderExtensions
 
     public static void Draw(this DrawingContext dc, CubicBezierEntity bezier, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
+        dc.DrawTransformed(bezier, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+            });
+
         var pen = new Pen(new SolidColorBrush(color), penSize);
         var pts = bezier.PlotCubicBezier();
 
@@ -156,8 +165,13 @@ public static class RenderExtensions
         }
     }
 
-    public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale)
+    public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
+        dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+            });
+
         var pen = new Pen(new SolidColorBrush(color), penSize);
         var start = text.Location;
 

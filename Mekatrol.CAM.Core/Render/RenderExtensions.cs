@@ -12,50 +12,52 @@ public static class RenderExtensions
     public const string DefaultFontFamilyName = "Arial";
 
     // Entry from a Control.OnRender(DrawingContext dc)
-    public static void Draw(this DrawingContext dc, IGeometricEntity g, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, IGeometricEntity g, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         switch (g.Type)
         {
-            case GeometricEntityType.Arc: dc.Draw((ArcEntity)g, color, penSize); break;
-            case GeometricEntityType.Circle: dc.Draw((CircleEntity)g, color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.CubicBezier: dc.Draw((CubicBezierEntity)g, color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.Ellipse: dc.Draw((EllipseEntity)g, color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.Line: dc.Draw((LineEntity)g, color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.Path: dc.Draw((PathEntity)g, color, penSize, accumulatedTransform); break;
+            case GeometricEntityType.Arc: dc.Draw((ArcEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.Circle: dc.Draw((CircleEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.CubicBezier: dc.Draw((CubicBezierEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.Ellipse: dc.Draw((EllipseEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.Line: dc.Draw((LineEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.Path: dc.Draw((PathEntity)g, color, penSize, viewScale, accumulatedTransform); break;
             case GeometricEntityType.Polygon:
-            case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, penSize, accumulatedTransform); break;
-            case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, penSize); break;
+            case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, penSize, viewScale); break;
         }
     }
 
-    public static void Draw(this DrawingContext dc, PathEntity path, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, PathEntity path, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         var m = path.Transform.GetMatrix() * accumulatedTransform;
 
         foreach (var c in path.Entities)
         {
-            dc.Draw(c, color, penSize, m);
+            dc.Draw(c, color, penSize, viewScale, m);
         }
     }
 
-    public static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float penSize)
+    public static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
-        var pen = new Pen(new SolidColorBrush(color), penSize);
+        dc.DrawTransformed(arc, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+                var pts = arc.TransformedPoints;
 
-        var pts = arc.TransformedPoints;
-
-        for (var i = 1; i < pts.Count; i++)
-        {
-            dc.DrawLine(pen, pts[i - 1].ToPt(), pts[i].ToPt());
-        }
+                for (var i = 1; i < pts.Count; i++)
+                {
+                    dc.DrawLine(pen, pts[i - 1].ToPt(), pts[i].ToPt());
+                }
+            });
     }
 
-    public static void Draw(this DrawingContext dc, CircleEntity circle, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, CircleEntity circle, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
-        dc.DrawTransformed(circle, color, penSize, accumulatedTransform,
-            (dc, pen, m) =>
+        dc.DrawTransformed(circle, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
             {
                 var circleCentre = new Point(circle.Location.X, circle.Location.Y);
                 var radius = circle.Radius;
@@ -64,10 +66,10 @@ public static class RenderExtensions
             });
     }
 
-    public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
-        dc.DrawTransformed(ellipse, color, penSize, accumulatedTransform, 
-            (dc, pen, m) =>
+        dc.DrawTransformed(ellipse, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
             {
                 var cx = ellipse.Location.X;
                 var cy = ellipse.Location.Y;
@@ -80,23 +82,24 @@ public static class RenderExtensions
             });
     }
 
-    public static void Draw(this DrawingContext dc, RectangleEntity rect, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, RectangleEntity rect, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
-        var m = rect.Transform.GetMatrix() * accumulatedTransform;
+        dc.DrawTransformed(rect, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+                for (var i = 0; i < rect.UntransformedPoints.Count; i++)
+                {
+                    var j = (i + 1) % rect.UntransformedPoints.Count;
 
-        var pen = new Pen(new SolidColorBrush(color), penSize);
-        for (var i = 0; i < rect.UntransformedPoints.Count; i++)
-        {
-            var j = (i + 1) % rect.UntransformedPoints.Count;
+                    var p1 = rect.UntransformedPoints[i];
+                    var p2 = rect.UntransformedPoints[j];
 
-            var p1 = rect.UntransformedPoints[i] * m;
-            var p2 = rect.UntransformedPoints[j] * m;
-
-            dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
-        }
+                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                }
+            });
     }
 
-    public static void Draw(this DrawingContext dc, LineEntity line, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, LineEntity line, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         var m = line.Transform.GetMatrix() * accumulatedTransform;
         var p1 = line.Location * m;
@@ -106,7 +109,7 @@ public static class RenderExtensions
         dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
     }
 
-    public static void Draw(this DrawingContext dc, PolybaseEntity poly, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, PolybaseEntity poly, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         if (poly.Points.Count == 0)
         {
@@ -137,7 +140,7 @@ public static class RenderExtensions
         }
     }
 
-    public static void Draw(this DrawingContext dc, CubicBezierEntity bezier, Color color, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, CubicBezierEntity bezier, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
         var pen = new Pen(new SolidColorBrush(color), penSize);
         var pts = bezier.PlotCubicBezier();
@@ -153,7 +156,7 @@ public static class RenderExtensions
         }
     }
 
-    public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize)
+    public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale)
     {
         var pen = new Pen(new SolidColorBrush(color), penSize);
         var start = text.Location;
@@ -301,18 +304,19 @@ public static class RenderExtensions
         IGeometricEntity entity,
         Color color,
         float penSize,
+        float viewScale,
         Matrix3 accumulatedTransform,
-        Action<DrawingContext, Pen, Matrix3> render)
+        Action<DrawingContext, Pen> render)
     {
         // Local -> world/device
         var m = entity.Transform.GetMatrix() * accumulatedTransform;
 
         // Keep pen width ~penSize px on screen if scaled
-        var pen = new Pen(new SolidColorBrush(color), penSize / 1.0f);
+        var pen = new Pen(new SolidColorBrush(color), penSize / viewScale);
 
-        using (dc.PushTransform(m.ToAvaloniaMatrix()))             // apply rotation + translate (+ scale/shear if any)
+        using (dc.PushTransform(m.ToAvaloniaMatrix()))
         {
-            render(dc, pen, m);
+            render(dc, pen);
         }
     }
 }

@@ -128,7 +128,7 @@ public sealed class GeometryView : Control
                 var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
                 context.DrawRectangle(null, boundsPen, rect);
 
-                context.Draw(entity, color, penSize, entity.Transform.GetMatrix());
+                context.Draw(entity, color, penSize, Scale, entity.Transform.GetMatrix());
             }
         }
     }

@@ -63,26 +63,20 @@ public static class RenderExtensions
         dc.DrawEllipse(null, pen, circleCentre.ToPt(scale), radius * scale, radius * scale);
     }
 
-    public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float scale, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, EllipseEntity entity, Color color, float scale, float penSize, Matrix3 accumulatedTransform)
     {
-        // Local -> world/device (keep your order)
-        var m = ellipse.Transform.GetMatrix() * accumulatedTransform;
+        dc.RenderTransformed(entity, color, scale, penSize, accumulatedTransform, 
+            (dc, pen) =>
+            {
+                var cx = entity.Location.X;
+                var cy = entity.Location.Y;
+                var rx = entity.Radius.X;
+                var ry = entity.Radius.Y;
 
-        // Keep pen width ~1px on screen if scene is scaled
-        var pen = new Pen(new SolidColorBrush(color), penSize / scale);
-
-        using (dc.PushTransform(m.ToAvaloniaMatrix()))             // apply rotation + translate (+ scale/shear if any)
-        using (dc.PushTransform(Matrix.CreateScale(scale, scale))) // viewport scale
-        {
-            var cx = ellipse.Location.X;
-            var cy = ellipse.Location.Y;
-            var rx = ellipse.Radius.X;
-            var ry = ellipse.Radius.Y;
-
-            // Axis-aligned in local coords; transform handles rotation
-            var rect = new Rect(cx - rx, cy - ry, rx * 2, ry * 2);
-            dc.DrawEllipse(null, pen, rect);
-        }
+                // Axis-aligned in local coords; transform handles rotation
+                var rect = new Rect(cx - rx, cy - ry, rx * 2, ry * 2);
+                dc.DrawEllipse(null, pen, rect);
+            });
     }
 
     public static void Draw(this DrawingContext dc, RectangleEntity rect, Color color, float scale, float penSize, Matrix3 accumulatedTransform)
@@ -300,5 +294,27 @@ public static class RenderExtensions
             m.Data[2], // tx = m02
             m.Data[5]  // ty = m12
         );
+    }
+
+    private static void RenderTransformed(
+        this DrawingContext dc,
+        IGeometricEntity entity,
+        Color color,
+        float scale,
+        float penSize,
+        Matrix3 accumulatedTransform,
+        Action<DrawingContext, Pen> render)
+    {
+        // Local -> world/device
+        var m = entity.Transform.GetMatrix() * accumulatedTransform;
+
+        // Keep pen width ~penSize px on screen if scaled
+        var pen = new Pen(new SolidColorBrush(color), penSize / scale);
+
+        using (dc.PushTransform(m.ToAvaloniaMatrix()))             // apply rotation + translate (+ scale/shear if any)
+        using (dc.PushTransform(Matrix.CreateScale(scale, scale))) // viewport scale
+        {
+            render(dc, pen);
+        }
     }
 }

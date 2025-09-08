@@ -18,7 +18,7 @@ public class CubicBezierEntity(PointDouble location, PointDouble control1, Point
 
     public override IReadOnlyList<PointDouble[]> ToPoints()
     {
-        var points = this.PlotCubicBezier().Select(p => new List<PointDouble>([p]).ToArray()).ToList();
-        return points;
+        var points = this.PlotCubicBezier().ToArray();
+        return [points];
     }
 }

@@ -18,7 +18,8 @@ public class QuadraticBezierEntity : BaseEntity, IGeometricEntity
 
     public override IReadOnlyList<PointDouble[]> ToPoints()
     {
-        var points = this.PlotQuadraticBezier().Select(p => new List<PointDouble>([p]).ToArray()).ToList();
-        return points;
+        var points = this.PlotQuadraticBezier().ToArray();
+        return [points];
+
     }
 }

@@ -145,7 +145,7 @@ public static class RenderExtensions
         dc.DrawTransformed(bezier, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                var pts = bezier.PlotCubicBezier();
+                var pts = bezier.UntransformedPoints;
 
                 for (var i = 1; i < pts.Count; i++)
                 {
@@ -162,7 +162,7 @@ public static class RenderExtensions
         dc.DrawTransformed(quadratic, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                var pts = quadratic.PlotQuadraticBezier();
+                var pts = quadratic.UntransformedPoints;
                 for (var i = 1; i < pts.Count; i++)
                 {
                     var p1 = pts[i - 1];

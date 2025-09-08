@@ -212,7 +212,7 @@ public class SvgPathParser(string data)
         var previousGeometry = _geometries.LastOrDefault();
         if (previousGeometry != null && previousGeometry.Type == GeometricEntityType.QuadraticBezier)
         {
-            var bezier = (QuadraticBezier)previousGeometry;
+            var bezier = (QuadraticBezierEntity)previousGeometry;
             reflectedControlPoint = GeometryUtils.GetReflectedPoint(bezier.Control, startLocation);
         }
 
@@ -227,7 +227,7 @@ public class SvgPathParser(string data)
         // Current location now end location
         _currentLocation = endLocation;
 
-        return new QuadraticBezier(startLocation, control, endLocation, new GeometryTransform());
+        return new QuadraticBezierEntity(startLocation, control, endLocation, new GeometryTransform());
     }
 
     private void ParseMove(SvgPathCommand command)

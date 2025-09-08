@@ -1,10 +1,8 @@
-﻿using Mekatrol.CAM.Core.Geometry.Entities;
+﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-namespace Mekatrol.CAM.Core.Geometry;
-
-public class QuadraticBezier : BaseEntity, IGeometricEntity
+public class QuadraticBezierEntity : BaseEntity, IGeometricEntity
 {
-    public QuadraticBezier(PointDouble location, PointDouble control, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
+    public QuadraticBezierEntity(PointDouble location, PointDouble control, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
         : base(GeometricEntityType.QuadraticBezier, id, location, transform)
     {
         EndLocation = endLocation;

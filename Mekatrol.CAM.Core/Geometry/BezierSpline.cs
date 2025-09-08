@@ -195,7 +195,7 @@ internal static class BezierSpline
         return new PointDouble(x, y);
     }
 
-    public static IList<PointDouble> PlotQuadraticBezier(this QuadraticBezier bezier, double step = 0.01)
+    public static IList<PointDouble> PlotQuadraticBezier(this QuadraticBezierEntity bezier, double step = 0.01)
     {
         // Samples a quadratic Bézier curve at uniform parameter intervals.
         // step: Δt in [0,1]. Smaller step → more points (denser curve).
@@ -322,7 +322,7 @@ internal static class BezierSpline
         return (new PointDouble(minX, minY), new PointDouble(maxX, maxY));
     }
 
-    public static CubicBezierEntity ToCubic(this QuadraticBezier bezier)
+    public static CubicBezierEntity ToCubic(this QuadraticBezierEntity bezier)
     {
         // A quadratic bezier of the form:
         //      [P1, C, P2]
@@ -336,6 +336,10 @@ internal static class BezierSpline
         var control1 = bezier.Location + twoThirds * (bezier.Control - bezier.Location);
         var control2 = bezier.EndLocation + twoThirds * (bezier.Control - bezier.EndLocation);
 
-        return new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new GeometryTransform());
+        var cubic = new CubicBezierEntity(bezier.Location, control1, control2, bezier.EndLocation, new GeometryTransform());
+
+        cubic.InitializeState(GeometryTransform.Identity);
+
+        return cubic;
     }
 }

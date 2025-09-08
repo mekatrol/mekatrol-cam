@@ -24,7 +24,7 @@ public static class RenderExtensions
             case GeometricEntityType.Path: dc.Draw((PathEntity)g, color, penSize, viewScale, accumulatedTransform); break;
             case GeometricEntityType.Polygon:
             case GeometricEntityType.Polyline: dc.Draw((PolybaseEntity)g, color, penSize, viewScale, accumulatedTransform); break;
-            case GeometricEntityType.QuadraticBezier: dc.Draw(((QuadraticBezier)g).ToCubic(), color, penSize, viewScale, accumulatedTransform); break;
+            case GeometricEntityType.QuadraticBezier: dc.Draw((QuadraticBezierEntity)g, color, penSize, viewScale, accumulatedTransform); break;
             case GeometricEntityType.Rectangle: dc.Draw((RectangleEntity)g, color, penSize, viewScale, accumulatedTransform); break;
             case GeometricEntityType.Text: dc.Draw((TextEntity)g, color, penSize, viewScale, accumulatedTransform); break;
         }
@@ -118,30 +118,26 @@ public static class RenderExtensions
         dc.DrawTransformed(poly, color, penSize, viewScale, accumulatedTransform,
             (dc, pen) =>
             {
+                for (var i = 1; i < poly.Points.Count; i++)
+                {
+                    var p1 = poly.Points[i - 1];
+                    var p2 = poly.Points[i];
+
+                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                }
+
+                // We need to automatically close a polygon if it is not already closed
+                if (poly is PolygonEntity polygon)
+                {
+                    var p1 = polygon.Points[^1];
+                    var p2 = polygon.Points[0];
+
+                    if (p1 != p2)
+                    {
+                        dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                    }
+                }
             });
-
-        var m = poly.Transform.GetMatrix() * accumulatedTransform;
-
-        var pen = new Pen(new SolidColorBrush(color), penSize);
-        for (var i = 1; i < poly.Points.Count; i++)
-        {
-            var p1 = poly.Points[i - 1] * m;
-            var p2 = poly.Points[i] * m;
-
-            dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
-        }
-
-        // We need to automatically close a polygon if it is not already closed
-        if (poly is PolygonEntity polygon)
-        {
-            var p1 = polygon.Points[^1] * m;
-            var p2 = polygon.Points[0] * m;
-
-            if (p1 != p2)
-            {
-                dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
-            }
-        }
     }
 
     public static void Draw(this DrawingContext dc, CubicBezierEntity bezier, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
@@ -149,20 +145,31 @@ public static class RenderExtensions
         dc.DrawTransformed(bezier, color, penSize, viewScale, accumulatedTransform,
             (dc, pen) =>
             {
+                var pts = bezier.PlotCubicBezier();
+
+                for (var i = 1; i < pts.Count; i++)
+                {
+                    var p1 = pts[i - 1];
+                    var p2 = pts[i];
+
+                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                }
             });
+    }
 
-        var pen = new Pen(new SolidColorBrush(color), penSize);
-        var pts = bezier.PlotCubicBezier();
-
-        var m = bezier.Transform.GetMatrix() * accumulatedTransform;
-
-        for (var i = 1; i < pts.Count; i++)
-        {
-            var p1 = pts[i - 1] * m;
-            var p2 = pts[i] * m;
-
-            dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
-        }
+    public static void Draw(this DrawingContext dc, QuadraticBezierEntity quadratic, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
+    {
+        dc.DrawTransformed(quadratic, color, penSize, viewScale, accumulatedTransform,
+            (dc, pen) =>
+            {
+                var pts = quadratic.PlotQuadraticBezier();
+                for (var i = 1; i < pts.Count; i++)
+                {
+                    var p1 = pts[i - 1];
+                    var p2 = pts[i];
+                    dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
+                }
+            });
     }
 
     public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
@@ -170,31 +177,29 @@ public static class RenderExtensions
         dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform,
             (dc, pen) =>
             {
+                var start = text.Location;
+
+                for (var i = 0; i < text.UntransformedPoints.Count; i++)
+                {
+                    var kind = text.PointTypes[i];
+                    var v1 = text.UntransformedPoints[i];
+                    var v2 = (i == text.UntransformedPoints.Count - 1 || (kind & PointType.ClosePoint) != 0) ? start : text.UntransformedPoints[i + 1];
+
+                    switch (kind & PointType.LowOrderMask)
+                    {
+                        case PointType.StartOfFigure:
+                            start = v1;
+                            dc.DrawLine(pen, v1.ToPt(), v2.ToPt());
+                            break;
+                        case PointType.BezierPoint:
+                        case PointType.LinePoint:
+                            dc.DrawLine(pen, v1.ToPt(), v2.ToPt());
+                            break;
+                        default:
+                            continue;
+                    }
+                }
             });
-
-        var pen = new Pen(new SolidColorBrush(color), penSize);
-        var start = text.Location;
-
-        for (var i = 0; i < text.UntransformedPoints.Count; i++)
-        {
-            var kind = text.PointTypes[i];
-            var v1 = text.UntransformedPoints[i];
-            var v2 = (i == text.UntransformedPoints.Count - 1 || (kind & PointType.ClosePoint) != 0) ? start : text.UntransformedPoints[i + 1];
-
-            switch (kind & PointType.LowOrderMask)
-            {
-                case PointType.StartOfFigure:
-                    start = v1;
-                    dc.DrawLine(pen, v1.ToPt(), v2.ToPt());
-                    break;
-                case PointType.BezierPoint:
-                case PointType.LinePoint:
-                    dc.DrawLine(pen, v1.ToPt(), v2.ToPt());
-                    break;
-                default:
-                    continue;
-            }
-        }
     }
 
     // Helpers

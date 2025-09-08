@@ -30,6 +30,16 @@ public static class RenderExtensions
         }
     }
 
+    public static void Draw(this DrawingContext dc, PathEntity path, Color color, float penSize, Matrix3 accumulatedTransform)
+    {
+        var m = path.Transform.GetMatrix() * accumulatedTransform;
+
+        foreach (var c in path.Entities)
+        {
+            dc.Draw(c, color, penSize, m);
+        }
+    }
+
     public static void Draw(this DrawingContext dc, ArcEntity arc, Color color, float penSize)
     {
         var pen = new Pen(new SolidColorBrush(color), penSize);
@@ -39,16 +49,6 @@ public static class RenderExtensions
         for (var i = 1; i < pts.Count; i++)
         {
             dc.DrawLine(pen, pts[i - 1].ToPt(), pts[i].ToPt());
-        }
-    }
-
-    public static void Draw(this DrawingContext dc, PathEntity path, Color color, float penSize, Matrix3 accumulatedTransform)
-    {
-        var m = path.Transform.GetMatrix() * accumulatedTransform;
-
-        foreach (var c in path.Entities)
-        {
-            dc.Draw(c, color, penSize, m);
         }
     }
 

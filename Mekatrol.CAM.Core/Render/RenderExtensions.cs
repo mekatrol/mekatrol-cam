@@ -54,24 +54,25 @@ public static class RenderExtensions
 
     public static void Draw(this DrawingContext dc, CircleEntity circle, Color color, float scale, float penSize, Matrix3 accumulatedTransform)
     {
-        var m = circle.Transform.GetMatrix() * accumulatedTransform;
+        dc.DrawTransformed(circle, color, scale, penSize, accumulatedTransform,
+            (dc, pen, m) =>
+            {
+                var circleCentre = new Point(circle.Location.X, circle.Location.Y);
+                var radius = circle.Radius;
 
-        var circleCentre = new PointDouble(circle.Location.X, circle.Location.Y) * m;
-        var radius = circle.Radius * m.GetScale().X; // Circle radius is equal in X and Y direction so can pick either
-
-        var pen = new Pen(new SolidColorBrush(color), penSize);
-        dc.DrawEllipse(null, pen, circleCentre.ToPt(scale), radius * scale, radius * scale);
+                dc.DrawEllipse(null, pen, circleCentre, radius, radius);
+            });
     }
 
-    public static void Draw(this DrawingContext dc, EllipseEntity entity, Color color, float scale, float penSize, Matrix3 accumulatedTransform)
+    public static void Draw(this DrawingContext dc, EllipseEntity ellipse, Color color, float scale, float penSize, Matrix3 accumulatedTransform)
     {
-        dc.RenderTransformed(entity, color, scale, penSize, accumulatedTransform, 
-            (dc, pen) =>
+        dc.DrawTransformed(ellipse, color, scale, penSize, accumulatedTransform, 
+            (dc, pen, m) =>
             {
-                var cx = entity.Location.X;
-                var cy = entity.Location.Y;
-                var rx = entity.Radius.X;
-                var ry = entity.Radius.Y;
+                var cx = ellipse.Location.X;
+                var cy = ellipse.Location.Y;
+                var rx = ellipse.Radius.X;
+                var ry = ellipse.Radius.Y;
 
                 // Axis-aligned in local coords; transform handles rotation
                 var rect = new Rect(cx - rx, cy - ry, rx * 2, ry * 2);
@@ -296,14 +297,14 @@ public static class RenderExtensions
         );
     }
 
-    private static void RenderTransformed(
+    private static void DrawTransformed(
         this DrawingContext dc,
         IGeometricEntity entity,
         Color color,
         float scale,
         float penSize,
         Matrix3 accumulatedTransform,
-        Action<DrawingContext, Pen> render)
+        Action<DrawingContext, Pen, Matrix3> render)
     {
         // Local -> world/device
         var m = entity.Transform.GetMatrix() * accumulatedTransform;
@@ -314,7 +315,7 @@ public static class RenderExtensions
         using (dc.PushTransform(m.ToAvaloniaMatrix()))             // apply rotation + translate (+ scale/shear if any)
         using (dc.PushTransform(Matrix.CreateScale(scale, scale))) // viewport scale
         {
-            render(dc, pen);
+            render(dc, pen, m);
         }
     }
 }

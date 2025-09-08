@@ -342,6 +342,12 @@ dotnet_diagnostic.IDE0054.severity = error
 # IDE0074 Use compound assignment
 dotnet_diagnostic.IDE0074.severity = error
 
+# IDE0079: Remove unnecessary suppression
+dotnet_diagnostic.IDE0079.severity = none
+
+# IDE0130 Namespace does not match folder structure
+dotnet_diagnostic.IDE0130.severity = error
+
 # IDE0300: Collection initialization can be simplified
 dotnet_diagnostic.IDE0300.severity = error
 
@@ -353,9 +359,6 @@ dotnet_diagnostic.IDE0305.severity = none
 
 # IDE1006: Naming violation rule
 dotnet_diagnostic.IDE1006.severity = error
-
-# IDE0079: Remove unnecessary suppression
-dotnet_diagnostic.IDE0079.severity = none
 
 # CA1304: Specify CultureInfo
 dotnet_diagnostic.CA1304.severity = error

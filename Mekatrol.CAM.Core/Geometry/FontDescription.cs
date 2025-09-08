@@ -1,6 +1,6 @@
 ﻿using Avalonia.Media;
 
-namespace Mekatrol.CAM.Core.Geometry.Entities;
+namespace Mekatrol.CAM.Core.Geometry;
 
 /// <summary>
 /// Create a fond description

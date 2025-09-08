@@ -1,6 +1,6 @@
 ﻿using Mekatrol.CAM.Core.Render;
 
-namespace Mekatrol.CAM.Core.Geometry.Entities;
+namespace Mekatrol.CAM.Core.Geometry;
 
 public class GeometryTransform
 {
@@ -16,13 +16,13 @@ public class GeometryTransform
     public static GeometryTransform Identity => new();
 
     public PointDouble Translate { get; set; }
-    
+
     public PointDouble Scale { get; set; }
-    
+
     public GeometryRotate Rotate { get; set; }
-    
+
     public double SkewX { get; set; }
-    
+
     public double SkewY { get; set; }
 
     /// <summary>

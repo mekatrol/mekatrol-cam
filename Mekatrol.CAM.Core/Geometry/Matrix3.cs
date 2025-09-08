@@ -1,4 +1,4 @@
-﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
+﻿namespace Mekatrol.CAM.Core.Geometry;
 
 public class Matrix3
 {
@@ -58,12 +58,12 @@ public class Matrix3
         var m22 = Data[8];
 
         return
-            (m00 * m11 * m22) +
-            (m01 * m12 * m20) +
-            (m02 * m10 * m21) -
-            (m02 * m11 * m20) -
-            (m00 * m12 * m21) -
-            (m01 * m10 * m22);
+            m00 * m11 * m22 +
+            m01 * m12 * m20 +
+            m02 * m10 * m21 -
+            m02 * m11 * m20 -
+            m00 * m12 * m21 -
+            m01 * m10 * m22;
     }
 
     public Matrix3 Normalized()

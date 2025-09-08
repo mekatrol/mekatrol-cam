@@ -1,5 +1,5 @@
 ﻿using Avalonia.Media;
-using Mekatrol.CAM.Core.Geometry.Entities;
+using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Render;
 using System.Text.RegularExpressions;
 

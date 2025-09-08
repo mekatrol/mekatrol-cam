@@ -69,7 +69,7 @@ public class CircleEntity(double centerX, double centerY, double radius, Geometr
         n = Math.Max(12, Math.Min(n, 720));
 
         var points = new PointDouble[n + 1]; // +1 to explicitly close the loop
-                                          // Uniform angle step for the full circle.
+                                             // Uniform angle step for the full circle.
         var step = (2.0 * Math.PI) / n;
 
         for (var i = 0; i < n; i++)

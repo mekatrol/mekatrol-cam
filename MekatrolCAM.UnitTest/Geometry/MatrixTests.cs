@@ -1,5 +1,4 @@
 ﻿using Mekatrol.CAM.Core.Geometry;
-using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
 
 namespace MekatrolCAM.UnitTest.Geometry;

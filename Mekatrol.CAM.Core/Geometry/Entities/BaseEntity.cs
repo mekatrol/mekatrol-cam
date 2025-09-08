@@ -90,7 +90,7 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
         _minTransformed = new PointDouble(double.MaxValue, double.MaxValue);
         _maxTransformed = new PointDouble(double.MinValue, double.MinValue);
 
-        foreach(var poly in points)
+        foreach (var poly in points)
         {
             _untransformedPoints = poly.ToList();
 

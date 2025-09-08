@@ -1,4 +1,4 @@
-﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
+﻿namespace Mekatrol.CAM.Core.Geometry;
 
 public class GeometryRotate(double a, double x, double y)
 {
@@ -113,6 +113,6 @@ public class GeometryRotate(double a, double x, double y)
 
     public override int GetHashCode()
     {
-        return ((int)Angle) ^ ((int)X) ^ ((int)Y);
+        return (int)Angle ^ (int)X ^ (int)Y;
     }
 }

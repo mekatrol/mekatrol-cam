@@ -10,7 +10,6 @@ public interface IGeometricEntity
 
     IReadOnlyList<PointDouble> UntransformedPoints { get; }
 
-
     IReadOnlyList<PointDouble> TransformedPoints { get; }
 
     PointDouble MinUntransformed { get; }

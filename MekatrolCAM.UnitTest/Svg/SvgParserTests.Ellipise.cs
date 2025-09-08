@@ -209,7 +209,7 @@ public partial class SvgParserTests
         Assert.IsNotNull(svgPath);
         Assert.AreEqual(1, svgPath.Entities.Count);
 
-        var geometry = svgPath .Entities[0];
+        var geometry = svgPath.Entities[0];
         Assert.AreEqual(GeometricEntityType.Ellipse, geometry.Type);
 
         var ellipse = (EllipseEntity)geometry;

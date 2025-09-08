@@ -18,7 +18,7 @@ public class RectangleEntity(double x, double y, double w, double h, double rx, 
 
     public override IReadOnlyList<PointDouble[]> ToPoints()
     {
-        var w = Size.X; 
+        var w = Size.X;
         var h = Size.Y;
         var x = Location.X;
         var y = Location.Y;
@@ -26,7 +26,7 @@ public class RectangleEntity(double x, double y, double w, double h, double rx, 
         // Normalize corner radii
         var rx = Math.Abs(CornerRounding.X);
         var ry = Math.Abs(CornerRounding.Y);
-        
+
         if (rx == 0 && ry > 0)
         {
             rx = ry;

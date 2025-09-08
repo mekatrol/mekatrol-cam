@@ -1,4 +1,4 @@
-﻿using Mekatrol.CAM.Core.Geometry.Entities;
+﻿using Mekatrol.CAM.Core.Geometry;
 
 namespace Mekatrol.CAM.Core.Parsers.Svg;
 

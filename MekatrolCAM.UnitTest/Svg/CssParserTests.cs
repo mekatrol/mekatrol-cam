@@ -9,7 +9,7 @@ namespace MekatrolCAM.UnitTest.Svg;
 [STATestClass]
 public class CssParserTests
 {
-    private static int _inited;    
+    private static int _inited;
 
     [AssemblyInitialize]
     public static void Init(TestContext _)

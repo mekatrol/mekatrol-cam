@@ -120,7 +120,7 @@ public sealed class GeometryView : Control
         using (context.PushTransform(Matrix.CreateTranslation(Pan.X, Pan.Y)))
         using (context.PushTransform(Matrix.CreateScale(Scale, Scale)))
         {
-            var boundsPen = new Pen(Brushes.DarkGray, 0.2 / Scale);
+            var boundsPen = new Pen(Brushes.DarkGray, 0.5 / Scale);
 
             foreach (var entity in Path.Entities)
             {

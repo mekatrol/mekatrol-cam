@@ -58,6 +58,7 @@ public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgP
             var parts = viewBox.Split([' '], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 4)
             {
+                // TODO: scale to view box
                 var _ = parts.Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
             }
         }

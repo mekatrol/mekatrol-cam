@@ -35,8 +35,8 @@ public class TextEntity(
             Value,
             Font,
             Alignment,
-            0,
-            0,
+            (float) Location.X,
+            (float) Location.Y,
             new Matrix3());
         
         // A piece of text can be made up of multiple polygons depending on the font

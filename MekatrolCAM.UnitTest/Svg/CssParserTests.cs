@@ -76,7 +76,7 @@ public class CssParserTests
         fontDescription = CssParser.ExtractFont(fontLine);
         Assert.IsNotNull(fontDescription);
         Assert.AreEqual("Microsoft Sans Serif", fontDescription.FamilyName);
-        AssertEx.WithinTolerance(RenderExtensions.DefaultFontSize * 0.8, fontDescription.Size);
+        AssertEx.WithinTolerance(CssParser.DefaultFontSize * 0.8, fontDescription.Size);
         Assert.AreEqual(FontStyle.Normal, fontDescription.Style);
 
         fontLine = "font: bold italic large 1.2mm serif;";

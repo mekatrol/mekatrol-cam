@@ -8,7 +8,6 @@ namespace Mekatrol.CAM.Core.Render;
 
 public static class RenderExtensions
 {
-    public const float DefaultFontSize = 4.233f; // CSS default 16px ≈ 4.233 mm
     public const string DefaultFontFamilyName = "Arial";
 
     // Entry from a Control.OnRender(DrawingContext dc)
@@ -292,34 +291,6 @@ public static class RenderExtensions
         // Pick one that exists on Windows, Linux and Mac
         return new FontFamily("Arial, Segoe UI, Sans-Serif");
     }
-
-    public static float ConvertGraphicSizeToMM(float size, string unit, float? currentFontSizeMm = null) =>
-        unit.ToLower().Trim() switch
-        {
-            "px" => size * 25.4f / 96.0f,
-            "in" => size * 25.4f,
-            "cm" => size * 10f,
-            "mm" => size,
-            "pt" => size * 25.4f / 72.0f,
-            "pc" => size * 12f * 25.4f / 72.0f,
-            "em" => size * (currentFontSizeMm ?? DefaultFontSize),
-            "%" => (size / 100.0f) * (currentFontSizeMm ?? DefaultFontSize),
-            _ => size,
-        };
-
-    public static float ConvertMMToGraphicSize(float mm, string unit, float? currentFontSizeMm = null) =>
-        unit.ToLower().Trim() switch
-        {
-            "px" => mm * 96.0f / 25.4f,
-            "in" => mm / 25.4f,
-            "cm" => mm / 10.0f,
-            "mm" => mm,
-            "pt" => mm * 72.0f / 25.4f,
-            "pc" => mm * 72.0f / (25.4f * 12.0f),
-            "em" => mm / (currentFontSizeMm ?? DefaultFontSize),
-            "%" => (mm / (currentFontSizeMm ?? DefaultFontSize)) * 100.0f,
-            _ => mm,
-        };
 
     public static Matrix ToAvaloniaMatrix(this Matrix3 m)
     {

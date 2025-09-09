@@ -12,176 +12,148 @@ namespace Mekatrol.CAM.Core.Parsers.Svg;
 
 public class TextParser : SvgParserBase
 {
-    private readonly FontDescription _currentFont;
+    // Default font used when no explicit font information is provided.
+    private readonly FontDescription _defaultFont;
 
     public TextParser(ILogger logger) : base(logger)
     {
+        // Resolve the best default font family available on the system.
         var fontFamily = RenderExtensions.BestFontFamily(RenderExtensions.DefaultFontFamilyName);
-        _currentFont = new FontDescription(fontFamily.Name, 30, FontStyle.Normal, FontWeight.Normal);
+        _defaultFont = new FontDescription(fontFamily.Name, 30, FontStyle.Normal, FontWeight.Normal);
     }
 
+    // Entry point for parsing an SVG <text> element into a geometric entity.
     public IGeometricEntity ParseTextElement(XElement element)
     {
         AssertIsTag(element, "text");
 
+        // Get explicit x/y positions if provided.
         var x = GetAttributeDoubleValue(element, "x").Value ?? 0.0;
         var y = GetAttributeDoubleValue(element, "y").Value ?? 0.0;
 
-        // Extract text elements as entity path
-        var textPath = (PathEntity)ParseTextSubElement(element, "text", _currentFont, x, y);
+        // Delegate to sub-element parser for handling runs and tspans.
+        var path = (PathEntity)ParseTextSubElement(
+            element: element,
+            parentFont: _defaultFont,
+            parentX: x,
+            parentY: y);
 
-        return new PathEntity(textPath.Location.X, textPath.Location.Y, textPath.Entities, /*closed:*/ false, ParseTransformAttribute(element));
+        // Wrap text characters with a path entity.
+        return new PathEntity(path.Location.X, path.Location.Y, path.Entities, false, ParseTransformAttribute(element));
     }
 
+    // Core parser for a <text> or <tspan> element and its children.
     private IGeometricEntity ParseTextSubElement(
         XElement element,
-        string tag,
         FontDescription? parentFont,
         double parentX,
         double parentY)
     {
-        AssertIsTag(element, tag);
+        // Inherit or override element positioning.
+        var x = GetAttributeDoubleValue(element, "x").Value ?? parentX;
+        var yAnchor = GetAttributeDoubleValue(element, "y").Value ?? parentY;
 
-        var xAttr = GetAttributeDoubleValue(element, "x").Value;
-        var yAttr = GetAttributeDoubleValue(element, "y").Value;
-        var x = xAttr ?? parentX;
-        var yUser = yAttr ?? parentY;
-
+        // Resolve transform chain (rotate, scale, translate, etc.).
         var transform = ParseTransformAttribute(element);
 
-        var font = parentFont ?? _currentFont;
+        // Determine font used by this element, possibly overridden by CSS or inline style.
+        var font = ResolveFont(element, parentFont ?? _defaultFont);
 
-        var className = GetAttributeValue(element, "class");
-        if (className != null && _cssClasses.TryGetValue(className, out var cssFontClass) && cssFontClass?.Font != null)
-        {
-            font = cssFontClass.Font;
-        }
+        // Determine text alignment (start, middle, end).
+        var align = ResolveAlignment(element);
 
-        var style = GetAttributeValue(element, "style");
-        var parsedFont = ParseFontFromStyle(style);
-        if (parsedFont != null)
-        {
-            font = parsedFont;
-        }
+        // Baseline positioning for vertical alignment.
+        var dominantBaseline = (GetAttributeValue(element, "dominant-baseline") ?? string.Empty).ToLowerInvariant();
 
-        var fontSizeValue = GetAttributeValue(element, "font-size");
-        if (fontSizeValue != null)
-        {
-            CssParser.ExtractFontSize(fontSizeValue, font);
-        }
-
-        var align = TextAlignment.Left;
-        var textAnchor = GetAttributeValue(element, "text-anchor");
-        if (textAnchor != null)
-        {
-            align = textAnchor.ToLower() switch
-            {
-                "middle" => TextAlignment.Center,
-                "end" => TextAlignment.Right,
-                _ => TextAlignment.Left,
-            };
-        }
-
-        var domBaseline = (GetAttributeValue(element, "dominant-baseline") ?? "").ToLower();
-
-        using var tf = SKTypeface.FromFamilyName(
-            font.FamilyName,
-            SKFontStyleWeight.Normal,
-            SKFontStyleWidth.Normal,
-            SKFontStyleSlant.Upright);
-
-        using var paint = new SKPaint { Typeface = tf, TextSize = (float)font.Size, IsAntialias = true };
+        // Create font resources (SkiaSharp font face and paint).
+        using var tf = CreateTypeface(font);
+        using var paint = CreatePaint(tf, (float)font.Size);
         paint.GetFontMetrics(out var fm);
 
-        var baselineY = AdjustBaselineYPx(yUser, domBaseline, (float)font.Size, fm);
+        // Compute Y coordinate adjusted for baseline.
+        var baselineY = ComputeBaselineYPx(yAnchor, dominantBaseline, (float)font.Size, fm);
 
-        var runs = new List<IGeometricEntity>();
-        var cursorX = x;
-        var cursorBaselineY = baselineY;
+        // Parse text runs (plain text and tspans).
+        var runs = ParseTextRuns(element, tf, align, baselineY, font);
 
-        foreach (var node in element.Nodes())
-        {
-            if (node.NodeType == XmlNodeType.Text || node.NodeType == XmlNodeType.CDATA)
-            {
-                var s = ((XText)node).Value;
-                if (string.IsNullOrWhiteSpace(s)) { continue; }
-
-                var t = s.Trim();
-                var textEntity = new TextEntity(cursorX, cursorBaselineY, t, font, align, new GeometryTransform());
-                runs.Add(textEntity);
-
-                var w = paint.MeasureText(t);
-                var gap = 0.25f * (float)font.Size;
-                cursorX += w + gap;
-                continue;
-            }
-
-            if (node.NodeType == XmlNodeType.Element)
-            {
-                var child = (XElement)node;
-                if (child.Name.LocalName != "tspan") { continue; }
-
-                var tspanFont = new FontDescription(font.FamilyName, font.Size, font.Style, font.Weight);
-
-                var tspanFontSize = GetAttributeValue(child, "font-size");
-                if (tspanFontSize != null)
-                {
-                    CssParser.ExtractFontSize(tspanFontSize, tspanFont);
-                }
-
-                var tspanX = GetAttributeDoubleValue(child, "x").Value;
-                var tspanY = GetAttributeDoubleValue(child, "y").Value;
-                var dxStr = GetAttributeValue(child, "dx");
-                var dyStr = GetAttributeValue(child, "dy");
-
-                if (tspanX.HasValue) { cursorX = tspanX.Value; }
-                if (tspanY.HasValue)
-                {
-                    using var tspanPaint = new SKPaint { Typeface = tf, TextSize = (float)tspanFont.Size, IsAntialias = true };
-                    tspanPaint.GetFontMetrics(out var tfm);
-                    var tspanDom = (GetAttributeValue(child, "dominant-baseline") ?? domBaseline);
-                    cursorBaselineY = AdjustBaselineYPx(tspanY.Value, tspanDom, (float)tspanFont.Size, tfm);
-                }
-
-                if (!string.IsNullOrWhiteSpace(dxStr))
-                {
-                    cursorX += ParseLengthPx(dxStr!, (float)tspanFont.Size);
-                }
-                if (!string.IsNullOrWhiteSpace(dyStr))
-                {
-                    cursorBaselineY += ParseLengthPx(dyStr!, (float)tspanFont.Size);
-                }
-
-                var tspanAnchor = GetAttributeValue(child, "text-anchor");
-                var tspanAlign = align;
-                if (tspanAnchor != null)
-                {
-                    tspanAlign = tspanAnchor.ToLower() switch
-                    {
-                        "middle" => TextAlignment.Center,
-                        "end" => TextAlignment.Right,
-                        _ => TextAlignment.Left,
-                    };
-                }
-
-                var t = child.Value;
-                if (string.IsNullOrWhiteSpace(t)) { continue; }
-                t = t.Trim();
-
-                var textEntity = new TextEntity(cursorX, cursorBaselineY, t, tspanFont, tspanAlign, new GeometryTransform());
-                runs.Add(textEntity);
-
-                using var tspanPaint2 = new SKPaint { Typeface = tf, TextSize = (float)tspanFont.Size, IsAntialias = true };
-                var w2 = tspanPaint2.MeasureText(t);
-                var gap2 = 0.25f * (float)tspanFont.Size;
-                cursorX += w2 + gap2;
-            }
-        }
-
-        return new PathEntity(x, yUser, runs, false, transform);
+        // Return aggregated path entity.
+        return new PathEntity(x, yAnchor, runs, false, transform);
     }
 
-    private static double AdjustBaselineYPx(double yAnchor, string dominantBaseline, float fontPx, SKFontMetrics fm)
+    // ---------- Font, alignment, and metrics helpers ----------
+
+    // Resolve the font by checking CSS classes, inline style, and font-size attribute.
+    private FontDescription ResolveFont(XElement element, FontDescription baseFont)
+    {
+        var font = new FontDescription(baseFont.FamilyName, baseFont.Size, baseFont.Style, baseFont.Weight);
+
+        // Check for CSS class reference.
+        var className = GetAttributeValue(element, "class");
+        if (className != null &&
+            _cssClasses.TryGetValue(className, out var cssClass) &&
+            cssClass?.Font != null)
+        {
+            font = cssClass.Font;
+        }
+
+        // Parse inline style attribute.
+        var style = GetAttributeValue(element, "style");
+        var styled = ParseFontFromStyle(style);
+        if (styled != null)
+        {
+            font = styled;
+        }
+
+        // Explicit font-size attribute overrides.
+        var fontSize = GetAttributeValue(element, "font-size");
+        if (fontSize != null)
+        {
+            CssParser.ExtractFontSize(fontSize, font);
+        }
+
+        return font;
+    }
+
+    // Resolve text alignment from SVG attribute "text-anchor".
+    private static TextAlignment ResolveAlignment(XElement element)
+    {
+        var textAnchor = GetAttributeValue(element, "text-anchor");
+        if (textAnchor == null)
+        {
+            return TextAlignment.Left;
+        }
+
+        return textAnchor.ToLowerInvariant() switch
+        {
+            "middle" => TextAlignment.Center,
+            "end" => TextAlignment.Right,
+            _ => TextAlignment.Left,
+        };
+    }
+
+    // Create a Skia typeface from the font description.
+    private static SKTypeface CreateTypeface(FontDescription font)
+    {
+        return SKTypeface.FromFamilyName(
+            familyName: font.FamilyName,
+            weight: SKFontStyleWeight.Normal,
+            width: SKFontStyleWidth.Normal,
+            slant: SKFontStyleSlant.Upright);
+    }
+
+    // Create a Skia paint object configured for text rendering.
+    private static SKPaint CreatePaint(SKTypeface tf, float sizePx)
+    {
+        return new SKPaint
+        {
+            Typeface = tf,
+            TextSize = sizePx,
+            IsAntialias = true,
+        };
+    }
+
+    // Compute Y position adjusted for dominant-baseline property.
+    private static double ComputeBaselineYPx(double yAnchor, string dominantBaseline, float fontPx, SKFontMetrics fm)
     {
         return dominantBaseline switch
         {
@@ -191,6 +163,133 @@ public class TextParser : SvgParserBase
         };
     }
 
+    // ---------- Text run parsing ----------
+
+    // Parse inline text runs and <tspan> children into a list of entities.
+    private List<IGeometricEntity> ParseTextRuns(
+        XElement element,
+        SKTypeface tf,
+        TextAlignment align,
+        double baselineY,
+        FontDescription font)
+    {
+        var runs = new List<IGeometricEntity>();
+
+        // Initialize cursor positions.
+        var cursorX = GetAttributeDoubleValue(element, "x").Value ?? 0.0;
+        var cursorBaselineY = baselineY;
+
+        // Walk through child nodes.
+        foreach (var node in element.Nodes())
+        {
+            // Handle raw text content.
+            if (node.NodeType == XmlNodeType.Text || node.NodeType == XmlNodeType.CDATA)
+            {
+                var s = ((XText)node).Value;
+                if (string.IsNullOrWhiteSpace(s)) { continue; }
+
+                var text = s.Trim();
+                AddTextRun(runs, tf, text, ref cursorX, ref cursorBaselineY, align, font);
+                continue;
+            }
+
+            // Handle <tspan> child nodes for rich text spans.
+            if (node.NodeType == XmlNodeType.Element)
+            {
+                var child = (XElement)node;
+                if (!child.Name.LocalName.Equals("tspan", StringComparison.OrdinalIgnoreCase)) { continue; }
+
+                ParseTspanNode(child, tf, align, ref cursorX, ref cursorBaselineY, runs, font);
+            }
+        }
+
+        return runs;
+    }
+
+    // Parse a <tspan> node and adjust cursor position accordingly.
+    private void ParseTspanNode(
+        XElement tspan,
+        SKTypeface tf,
+        TextAlignment parentAlign,
+        ref double cursorX,
+        ref double cursorBaselineY,
+        List<IGeometricEntity> runs,
+        FontDescription inheritedFont)
+    {
+        // Clone inherited font.
+        var font = new FontDescription(inheritedFont.FamilyName, inheritedFont.Size, inheritedFont.Style, inheritedFont.Weight);
+
+        // Override font-size if present.
+        var tspanFontSize = GetAttributeValue(tspan, "font-size");
+        if (tspanFontSize != null)
+        {
+            CssParser.ExtractFontSize(tspanFontSize, font);
+        }
+
+        // Handle explicit positioning overrides (x, y, dx, dy).
+        var xAttr = GetAttributeDoubleValue(tspan, "x").Value;
+        var yAttr = GetAttributeDoubleValue(tspan, "y").Value;
+        var dxStr = GetAttributeValue(tspan, "dx");
+        var dyStr = GetAttributeValue(tspan, "dy");
+
+        if (xAttr.HasValue)
+        {
+            cursorX = xAttr.Value;
+        }
+
+        if (yAttr.HasValue)
+        {
+            using var tempPaint = CreatePaint(tf, (float)font.Size);
+            tempPaint.GetFontMetrics(out var tfm);
+            var dom = (GetAttributeValue(tspan, "dominant-baseline") ?? GetAttributeValue(tspan.Parent ?? tspan, "dominant-baseline") ?? string.Empty).ToLowerInvariant();
+            cursorBaselineY = ComputeBaselineYPx(yAttr.Value, dom, (float)font.Size, tfm);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dxStr))
+        {
+            cursorX += ParseLengthPx(dxStr!, (float)font.Size);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dyStr))
+        {
+            cursorBaselineY += ParseLengthPx(dyStr!, (float)font.Size);
+        }
+
+        // Resolve alignment override if specified.
+        var align = ResolveAlignment(tspan) == TextAlignment.Left ? parentAlign : ResolveAlignment(tspan);
+
+        // Extract trimmed text content.
+        var text = tspan.Value?.Trim();
+        if (string.IsNullOrWhiteSpace(text)) { return; }
+
+        // Add run entity for the tspan text.
+        AddTextRun(runs, tf, text!, ref cursorX, ref cursorBaselineY, align, font);
+    }
+
+    // Add a text run entity and advance cursor position.
+    private void AddTextRun(
+        List<IGeometricEntity> runs,
+        SKTypeface tf,
+        string text,
+        ref double cursorX,
+        ref double cursorBaselineY,
+        TextAlignment align,
+        FontDescription font)
+    {
+        // Create entity for text run.
+        var run = new TextEntity(cursorX, cursorBaselineY, text, font, align, new GeometryTransform());
+        runs.Add(run);
+
+        // Advance cursor horizontally by measured width plus gap.
+        using var paint = CreatePaint(tf, (float)font.Size);
+        var width = paint.MeasureText(text);
+        var gap = 0.25f * (float)font.Size;
+        cursorX += width + gap;
+    }
+
+    // ---------- Unit parsing ----------
+
+    // Parse a length string (em, px, %, or raw number) into pixel units.
     private static double ParseLengthPx(string v, float currentFontPx)
     {
         v = v.Trim().ToLowerInvariant();
@@ -200,21 +299,24 @@ public class TextParser : SvgParserBase
             var n = double.Parse(v[..^2], CultureInfo.InvariantCulture);
             return n * currentFontPx;
         }
+
         if (v.EndsWith("px"))
         {
             var n = double.Parse(v[..^2], CultureInfo.InvariantCulture);
             return n;
         }
+
         if (v.EndsWith('%'))
         {
             var n = double.Parse(v[..^1], CultureInfo.InvariantCulture);
             return (n / 100.0) * currentFontPx;
         }
 
-        // raw number: treat as px per SVG
+        // Default: interpret as raw px.
         return double.Parse(v, CultureInfo.InvariantCulture);
     }
 
+    // Parse font details from an inline style string.
     private static FontDescription? ParseFontFromStyle(string? style)
     {
         if (string.IsNullOrWhiteSpace(style))
@@ -223,7 +325,6 @@ public class TextParser : SvgParserBase
         }
 
         var css = CssParser.Parse($".font {{ {style} }}");
-
         if (!css.TryGetValue("font", out var value))
         {
             return null;
@@ -231,5 +332,4 @@ public class TextParser : SvgParserBase
 
         return value.Font;
     }
-
 }

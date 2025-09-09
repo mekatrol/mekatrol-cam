@@ -2,7 +2,7 @@
 
 public enum ControurSegmentType : byte
 {
-    StartContour,
+    OpenContour,
     LineTo,
     Cubic,
     Quadratic,

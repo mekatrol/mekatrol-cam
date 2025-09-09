@@ -31,41 +31,74 @@ public class TextEntity(
     public override IReadOnlyList<PointDouble[]> ToPoints()
     {
         // Create untransformed text points
-        var (points, pointTypes) = GeometryUtils.PlotText(
+        var contours = GeometryUtils.CreateTextContours(
             Value,
             Font,
             Alignment,
-            (float) Location.X,
-            (float) Location.Y,
-            new Matrix3());
-        
+            (float)Location.X,
+            (float)Location.Y);
+
         // A piece of text can be made up of multiple polygons depending on the font
         // We need to break the point sets into multiple polygons
+
+        // For example the letter 'A' can be made up of two polygons depending on font
+
+        //        /\        
+        //       /  \       
+        //      / /\ \      ╔═══╗
+        //     / /--\ \     ║   ║
+        //    /        \    ╠═══╣
+        //   / /------\ \   ║   ║
+        //  /_/        \_\  ╨   ╨
 
         var polygons = new List<PointDouble[]>();
         var polygon = new List<PointDouble>();
 
-        for (var i = 0; i < pointTypes.Count; i++)
+        foreach (var contour in contours)
         {
-            var pointType = pointTypes[i];
-            var point = points[i];
-
-            if (pointType == ControurSegmentType.StartContour)
+            foreach (var contourSegment in contour.Segments)
             {
-                if (polygon.Count > 0)
+                var pts = contourSegment.Points;
+                switch (contourSegment.SegmentType)
                 {
-                    polygons.Add(polygon.ToArray());
+                    case ControurSegmentType.OpenContour:
+                        // Add starting point
+                        polygon.Add(pts[0]);
+                        break;
+
+                    case ControurSegmentType.LineTo:
+                        // Add line end point ([0] is start point)
+                        polygon.Add(pts[1]);
+                        break;
+
+                    case ControurSegmentType.Cubic:
+                        {
+                            var cubic = new CubicBezierEntity(pts[0], pts[1], pts[2], pts[3], GeometryTransform.Identity);
+                            var cubicPoints = cubic.ToPoints();
+                            polygon.AddRange(cubicPoints[0].Skip(1)); // Skip first point because it is the same as the prev point
+                        }
+                        break;
+
+                    case ControurSegmentType.Quadratic:
+                        {
+                            var quad = new QuadraticBezierEntity(pts[0], pts[1], pts[2], GeometryTransform.Identity);
+                            var quadPoints = quad.ToPoints();
+                            polygon.AddRange(quadPoints[0].Skip(1)); // Skip first point because it is the same as the prev point
+                        }
+                        break;
+
+                    case ControurSegmentType.CloseContour:
+                        // Add start new
+                        polygons.Add(polygon.ToArray());
+
+                        // Start new
+                        polygon.Clear();
+                        break;
+
+                    default:
+                        break;
                 }
-
-                polygon.Clear();
             }
-
-            polygon.Add(point);
-        }
-
-        if (polygon.Count > 0)
-        {
-            polygons.Add(polygon.ToArray());
         }
 
         return polygons.AsReadOnly();

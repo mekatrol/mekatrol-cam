@@ -429,16 +429,15 @@ public static class GeometryUtils
         return (points, minX, minY, maxX, maxY);
     }
 
-    public static (List<PointDouble> points, List<ControurSegmentType> types) PlotText(
-        string text,
-        FontDescription fontDescription,
-        TextAlignment alignment,   // horizontal alignment of the whole run
-        float x,                   // anchor X (before alignment shift)
-        float y,                   // baseline Y
-        Matrix3 transform)         // model transform applied to each output point
+    public static List<Contour> CreateTextContours(
+        string text,                     // The text to build contours for
+        FontDescription fontDescription, // The font to use when building text
+        TextAlignment alignment,         // Horizontal alignment of the whole run
+        float x,                         // Anchor X (before alignment shift)
+        float y)                         // Baseline Y
     {
         // 1) Build font + paint
-        using var tf = SKTypeface.FromFamilyName(
+        using var typeface = SKTypeface.FromFamilyName(
             fontDescription.FamilyName,
             SKFontStyleWeight.Normal,
             SKFontStyleWidth.Normal,
@@ -446,7 +445,7 @@ public static class GeometryUtils
 
         using var paint = new SKPaint
         {
-            Typeface = tf,
+            Typeface = typeface,
             TextSize = fontDescription.Size, // units = pixels (DIPs≈px at 96 DPI)
             IsAntialias = true,
             // Keep Left align; we do our own pre-shift below for deterministic geometry.
@@ -468,135 +467,112 @@ public static class GeometryUtils
         using var path = paint.GetTextPath(text, xAligned, y);
         if (path == null || path.IsEmpty)
         {
-            return (new List<PointDouble>(), new List<ControurSegmentType>());
+            return [];
         }
 
-        // 4) Decompose SKPath -> point/type lists compatible with your geometry pipeline
-        var points = new List<PointDouble>();
-        var types = new List<ControurSegmentType>();
-
+        // 4) Decompose SKPath into contours, each contour is a character in the text
         var rawPts = new SKPoint[4];
         using var it = path.CreateRawIterator();
 
-        SKPathVerb verb;
-        var figureStartIndex = -1;
+        var contours = new List<Contour>();
+        var contour = new Contour();
 
+        var start = new PointDouble();
+        var current = new PointDouble();
+
+        SKPathVerb verb;
         while ((verb = it.Next(rawPts)) != SKPathVerb.Done)
         {
             switch (verb)
             {
                 case SKPathVerb.Move:
                     {
-                        // Start of a new contour. rawPts[0] = move target
-                        var p = rawPts[0];
-                        points.Add(new PointDouble(p.X, p.Y));
-                        types.Add(ControurSegmentType.StartContour);
-                        figureStartIndex = points.Count - 1;
+                        // Start of a new contour: [s]
+                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y); // Start point
+
+                        start = s;
+                        current = s;
+
+                        contour.Segments.Add(new ContourSegment(ControurSegmentType.OpenContour, [s]));
                         break;
                     }
+
                 case SKPathVerb.Line:
                     {
-                        // Line segment. rawPts[1] = line end
-                        var p = rawPts[1];
-                        points.Add(new PointDouble(p.X, p.Y));
-                        types.Add(ControurSegmentType.LineTo);
+                        // Line segment: [s, e]
+                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y); // Start point
+                        var e = new PointDouble(rawPts[1].X, rawPts[2].Y); // End point
+
+                        current = e;
+
+                        contour.Segments.Add(new ContourSegment(ControurSegmentType.LineTo, [s, e]));
                         break;
                     }
+
                 case SKPathVerb.Quad:
                     {
-                        // Quadratic Bézier. rawPts: [p0, c, e]
-                        // Emit control then end as BezierPoint like System.Drawing.GraphicsPath does.
-                        var c = rawPts[1];
-                        var e = rawPts[2];
-                        points.Add(new PointDouble(c.X, c.Y)); types.Add(ControurSegmentType.Quadratic);
-                        points.Add(new PointDouble(e.X, e.Y)); types.Add(ControurSegmentType.Quadratic);
+                        // Quadratic Bézier: [s, c, e]
+                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y); // Start point
+                        var c = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point
+                        var e = new PointDouble(rawPts[2].X, rawPts[2].Y); // End point
+
+                        current = e;
+
+                        contour.Segments.Add(new ContourSegment(ControurSegmentType.Quadratic, [s, c, e]));
                         break;
                     }
+
                 case SKPathVerb.Conic:
                     {
                         // Conic (weighted quadratic). Treat as quadratic control+end.
                         // If you need exact conic handling, read it.ConicWeight and convert to quad/cubic.
-                        var c = rawPts[1];
-                        var e = rawPts[2];
-                        points.Add(new PointDouble(c.X, c.Y)); types.Add(ControurSegmentType.Quadratic);
-                        points.Add(new PointDouble(e.X, e.Y)); types.Add(ControurSegmentType.Quadratic);
+                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y); // Start point
+                        var c = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point
+                        var e = new PointDouble(rawPts[2].X, rawPts[2].Y); // End point
+
+                        current = e;
+
+                        contour.Segments.Add(new ContourSegment(ControurSegmentType.Quadratic, [s, c, e]));
                         break;
                     }
+
                 case SKPathVerb.Cubic:
                     {
-                        // Cubic Bézier. rawPts: [p0, c1, c2, e]
-                        var c1 = rawPts[1];
-                        var c2 = rawPts[2];
-                        var e = rawPts[3];
-                        points.Add(new PointDouble(c1.X, c1.Y)); types.Add(ControurSegmentType.Cubic);
-                        points.Add(new PointDouble(c2.X, c2.Y)); types.Add(ControurSegmentType.Cubic);
-                        points.Add(new PointDouble(e.X, e.Y)); types.Add(ControurSegmentType.Cubic);
+                        // Cubic Bézier. rawPts: [s, c1, c2, e]
+                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y);  // Start point
+                        var c1 = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point 1
+                        var c2 = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point 2
+                        var e = new PointDouble(rawPts[2].X, rawPts[2].Y);  // End point
+                        
+                        current = e;
+
+                        contour.Segments.Add(new ContourSegment(ControurSegmentType.Quadratic, [s, c1, c2, e]));
                         break;
                     }
+
                 case SKPathVerb.Close:
                     {
-                        // Close current contour. Mark last point with ClosePoint flag.
-                        if (figureStartIndex >= 0 && points.Count > figureStartIndex)
+                        // If character needs an explicit closing edge, add a final line from 'current' to 'start' only if needed.
+                        var needsClosingEdge = current != start;
+
+                        if (needsClosingEdge)
                         {
-                            types[^1] |= ControurSegmentType.CloseContour;
+                            contour.Segments.Add(new ContourSegment(ControurSegmentType.LineTo, [current, start]));
+                            current = start;
                         }
 
-                        figureStartIndex = -1;
+                        // Make end contour
+                        contour.Segments.Add(new ContourSegment(ControurSegmentType.CloseContour, []));
+
+                        // Finalize this contour
+                        contours.Add(contour);
+                        contour = new Contour();
                         break;
                     }
             }
         }
 
-        if (points.Count == 0)
-        {
-            return (new List<PointDouble>(), new List<ControurSegmentType>());
-        }
-
-        // 5) Optional vertical centering around the local bbox (matches your prior behavior).
-        //    If you prefer true typographic centering, use SKFontMetrics instead.
-        var minY = points.Min(p => p.Y);
-        var maxY = points.Max(p => p.Y);
-        var yCenterOffset = (maxY - minY) / 2.0;
-
-        for (var i = 0; i < points.Count; i++)
-        {
-            // Apply vertical centering, then the caller-supplied transform.
-            var centered = new PointDouble(points[i].X, points[i].Y - yCenterOffset);
-            points[i] = centered * transform;
-        }
-
-        return (points, types);
-    }
-
-    public static PointDouble MeasureText(
-        string text,
-        FontDescription fontDescription,
-        TextAlignment alignment,
-        float x,
-        float y,
-        Matrix3 transform)
-    {
-        var (points, _) = PlotText(text, fontDescription, alignment, x, y, transform);
-
-        if (points.Count == 0)
-        {
-            return new PointDouble();
-        }
-
-        var minX = double.MaxValue;
-        var minY = double.MaxValue;
-        var maxX = double.MinValue;
-        var maxY = double.MinValue;
-
-        foreach (var point in points)
-        {
-            minX = Math.Min(minX, point.X);
-            minY = Math.Min(minX, point.X);
-            maxX = Math.Max(maxX, point.X);
-            maxY = Math.Max(maxX, point.X);
-        }
-
-        return new PointDouble(maxX - minX, maxY - minY);
+        return contours;
     }
 
     public static IBoundary GetBoundary(double x1, double y1, double x2, double y2)

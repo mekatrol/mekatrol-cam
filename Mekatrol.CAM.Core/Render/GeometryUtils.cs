@@ -501,7 +501,7 @@ public static class GeometryUtils
                     {
                         // Line segment: [s, e]
                         var s = new PointDouble(rawPts[0].X, rawPts[0].Y); // Start point
-                        var e = new PointDouble(rawPts[1].X, rawPts[2].Y); // End point
+                        var e = new PointDouble(rawPts[1].X, rawPts[1].Y); // End point
 
                         current = e;
 
@@ -541,8 +541,8 @@ public static class GeometryUtils
                         // Cubic Bézier. rawPts: [s, c1, c2, e]
                         var s = new PointDouble(rawPts[0].X, rawPts[0].Y);  // Start point
                         var c1 = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point 1
-                        var c2 = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point 2
-                        var e = new PointDouble(rawPts[2].X, rawPts[2].Y);  // End point
+                        var c2 = new PointDouble(rawPts[2].X, rawPts[2].Y); // Control point 2
+                        var e = new PointDouble(rawPts[3].X, rawPts[3].Y);  // End point
                         
                         current = e;
 

@@ -89,7 +89,7 @@ public class TextEntity(
 
                     case ControurSegmentType.CloseContour:
                         // Add start new
-                        polygons.Add(polygon.ToArray());
+                        if (polygon.Count > 0) { polygons.Add(polygon.ToArray()); }
 
                         // Start new
                         polygon.Clear();

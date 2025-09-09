@@ -50,7 +50,7 @@ public class TextEntity(
             var pointType = pointTypes[i];
             var point = points[i];
 
-            if (pointType == PointType.StartOfFigure)
+            if (pointType == ControurSegmentType.StartContour)
             {
                 if (polygon.Count > 0)
                 {

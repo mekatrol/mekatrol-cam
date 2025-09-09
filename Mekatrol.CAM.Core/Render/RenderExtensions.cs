@@ -3,6 +3,7 @@ using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Mekatrol.CAM.Core.Render;
 

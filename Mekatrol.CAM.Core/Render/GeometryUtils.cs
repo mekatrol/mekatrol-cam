@@ -429,7 +429,7 @@ public static class GeometryUtils
         return (points, minX, minY, maxX, maxY);
     }
 
-    public static (List<PointDouble> points, List<PointType> types) PlotText(
+    public static (List<PointDouble> points, List<ControurSegmentType> types) PlotText(
         string text,
         FontDescription fontDescription,
         TextAlignment alignment,   // horizontal alignment of the whole run
@@ -468,12 +468,12 @@ public static class GeometryUtils
         using var path = paint.GetTextPath(text, xAligned, y);
         if (path == null || path.IsEmpty)
         {
-            return (new List<PointDouble>(), new List<PointType>());
+            return (new List<PointDouble>(), new List<ControurSegmentType>());
         }
 
         // 4) Decompose SKPath -> point/type lists compatible with your geometry pipeline
         var points = new List<PointDouble>();
-        var types = new List<PointType>();
+        var types = new List<ControurSegmentType>();
 
         var rawPts = new SKPoint[4];
         using var it = path.CreateRawIterator();
@@ -490,7 +490,7 @@ public static class GeometryUtils
                         // Start of a new contour. rawPts[0] = move target
                         var p = rawPts[0];
                         points.Add(new PointDouble(p.X, p.Y));
-                        types.Add(PointType.StartOfFigure);
+                        types.Add(ControurSegmentType.StartContour);
                         figureStartIndex = points.Count - 1;
                         break;
                     }
@@ -499,7 +499,7 @@ public static class GeometryUtils
                         // Line segment. rawPts[1] = line end
                         var p = rawPts[1];
                         points.Add(new PointDouble(p.X, p.Y));
-                        types.Add(PointType.LinePoint);
+                        types.Add(ControurSegmentType.LineTo);
                         break;
                     }
                 case SKPathVerb.Quad:
@@ -508,8 +508,8 @@ public static class GeometryUtils
                         // Emit control then end as BezierPoint like System.Drawing.GraphicsPath does.
                         var c = rawPts[1];
                         var e = rawPts[2];
-                        points.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
-                        points.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c.X, c.Y)); types.Add(ControurSegmentType.Quadratic);
+                        points.Add(new PointDouble(e.X, e.Y)); types.Add(ControurSegmentType.Quadratic);
                         break;
                     }
                 case SKPathVerb.Conic:
@@ -518,8 +518,8 @@ public static class GeometryUtils
                         // If you need exact conic handling, read it.ConicWeight and convert to quad/cubic.
                         var c = rawPts[1];
                         var e = rawPts[2];
-                        points.Add(new PointDouble(c.X, c.Y)); types.Add(PointType.BezierPoint);
-                        points.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c.X, c.Y)); types.Add(ControurSegmentType.Quadratic);
+                        points.Add(new PointDouble(e.X, e.Y)); types.Add(ControurSegmentType.Quadratic);
                         break;
                     }
                 case SKPathVerb.Cubic:
@@ -528,9 +528,9 @@ public static class GeometryUtils
                         var c1 = rawPts[1];
                         var c2 = rawPts[2];
                         var e = rawPts[3];
-                        points.Add(new PointDouble(c1.X, c1.Y)); types.Add(PointType.BezierPoint);
-                        points.Add(new PointDouble(c2.X, c2.Y)); types.Add(PointType.BezierPoint);
-                        points.Add(new PointDouble(e.X, e.Y)); types.Add(PointType.BezierPoint);
+                        points.Add(new PointDouble(c1.X, c1.Y)); types.Add(ControurSegmentType.Cubic);
+                        points.Add(new PointDouble(c2.X, c2.Y)); types.Add(ControurSegmentType.Cubic);
+                        points.Add(new PointDouble(e.X, e.Y)); types.Add(ControurSegmentType.Cubic);
                         break;
                     }
                 case SKPathVerb.Close:
@@ -538,7 +538,7 @@ public static class GeometryUtils
                         // Close current contour. Mark last point with ClosePoint flag.
                         if (figureStartIndex >= 0 && points.Count > figureStartIndex)
                         {
-                            types[^1] |= PointType.ClosePoint;
+                            types[^1] |= ControurSegmentType.CloseContour;
                         }
 
                         figureStartIndex = -1;
@@ -549,7 +549,7 @@ public static class GeometryUtils
 
         if (points.Count == 0)
         {
-            return (new List<PointDouble>(), new List<PointType>());
+            return (new List<PointDouble>(), new List<ControurSegmentType>());
         }
 
         // 5) Optional vertical centering around the local bbox (matches your prior behavior).

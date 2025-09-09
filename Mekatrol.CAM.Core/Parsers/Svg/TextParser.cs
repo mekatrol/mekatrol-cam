@@ -5,6 +5,7 @@ using Mekatrol.CAM.Core.Render;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -105,10 +106,22 @@ public class TextParser : SvgParserBase
         }
 
         // Explicit font-size attribute overrides.
-        var fontSize = GetAttributeValue(element, "font-size");
-        if (fontSize != null)
+        var fontSizeAttr = GetAttributeValue(element, "font-size");
+        if (fontSizeAttr != null)
         {
-            CssParser.ExtractFontSize(fontSize, font);
+            const string FontSizePattern = @"^\s*([0-9]*\.?[0-9]+)\s*([a-zA-Z%]*)\s*(?:/\s*[0-9]*\.?[0-9]+[a-zA-Z%]*)?\s*$";
+            var m = Regex.Match(fontSizeAttr, FontSizePattern);
+            if (m.Success)
+            {
+                var fontSize = float.Parse(m.Groups[1].Value, provider: CultureInfo.InvariantCulture);
+                var unit = m.Groups[2].Value;
+
+                if (!string.IsNullOrWhiteSpace(unit))
+                {
+                    fontSize = CssParser.ConvertMMToGraphicSize(fontSize, unit);
+                }
+                font.Size = fontSize;
+            }
         }
 
         return font;
@@ -166,7 +179,7 @@ public class TextParser : SvgParserBase
     // ---------- Text run parsing ----------
 
     // Parse inline text runs and <tspan> children into a list of entities.
-    private List<IGeometricEntity> ParseTextRuns(
+    private static List<IGeometricEntity> ParseTextRuns(
         XElement element,
         SKTypeface tf,
         TextAlignment align,
@@ -207,7 +220,7 @@ public class TextParser : SvgParserBase
     }
 
     // Parse a <tspan> node and adjust cursor position accordingly.
-    private void ParseTspanNode(
+    private static void ParseTspanNode(
         XElement tspan,
         SKTypeface tf,
         TextAlignment parentAlign,
@@ -267,7 +280,7 @@ public class TextParser : SvgParserBase
     }
 
     // Add a text run entity and advance cursor position.
-    private void AddTextRun(
+    private static void AddTextRun(
         List<IGeometricEntity> runs,
         SKTypeface tf,
         string text,

@@ -524,15 +524,26 @@ public static class GeometryUtils
 
                 case SKPathVerb.Conic:
                     {
-                        // Conic (weighted quadratic). Treat as quadratic control+end.
-                        // If you need exact conic handling, read it.ConicWeight and convert to quad/cubic.
-                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y); // Start point
-                        var c = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point
-                        var e = new PointDouble(rawPts[2].X, rawPts[2].Y); // End point
+                        // Conic (weighted quadratic):[s, c, e], weight from iterator
+                        var s = new PointDouble(rawPts[0].X, rawPts[0].Y);
+                        var c = new PointDouble(rawPts[1].X, rawPts[1].Y);
+                        var e = new PointDouble(rawPts[2].X, rawPts[2].Y);
+
+                        var w = it.ConicWeight();                  // SkiaSharp exposes this on the iterator
+                        var alpha = 4 * w / (3 * (1 + w));         // exact when w=1; good approx otherwise
+
+                        var c1 = new PointDouble(
+                            s.X + (c.X - s.X) * alpha,
+                            s.Y + (c.Y - s.Y) * alpha);
+
+                        var c2 = new PointDouble(
+                            e.X + (c.X - e.X) * alpha,
+                            e.Y + (c.Y - e.Y) * alpha);
 
                         current = e;
 
-                        contour.Segments.Add(new ContourSegment(ControurSegmentType.Quadratic, [s, c, e]));
+                        contour.Segments.Add(
+                            new ContourSegment(ControurSegmentType.Cubic, [s, c1, c2, e]));
                         break;
                     }
 

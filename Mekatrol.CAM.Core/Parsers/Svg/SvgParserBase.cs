@@ -102,54 +102,77 @@ public abstract class SvgParserBase(ILogger logger)
             //  a CSS transform: https://developer.mozilla.org/en-US/docs/Web/CSS/transform
             // **** WE DONT PROCESS CSS TRANSFORMS, ONLY SVG ONES
 
+            var regex = new Regex(@"^(?<attr>matrix|scale|rotate|translate|skewx|skewy)(?![A-Za-z0-9_])", RegexOptions.IgnoreCase);
+
+            var match = regex.Match(transformDefinition);
+
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            var attr = match.Groups["attr"].Value.ToLowerInvariant();
+
             // Given a transform can have multiple types of definition we prioritise to use the matrix
             // definition over scale, translate and rotate. Technically it should have matrix or other types
             // but not both.
-            if (transformDefinition.StartsWith("matrix", StringComparison.OrdinalIgnoreCase))
+            switch (attr)
             {
-                var m = ParseMatrix(transformDefinition);
+                case "matrix":
+                    {
+                        var m = ParseMatrix(transformDefinition);
 
-                transform.Rotate += new GeometryRotate(GeometryUtils.RadiansToDegrees(m.GetRotation()), 0.0, 0.0);
-                transform.Scale *= m.GetScale();
-                transform.Translate += m.GetTranslation();
-            }
-            else if (transformDefinition.StartsWith("scale", StringComparison.OrdinalIgnoreCase))
-            {
-                var scale = ParseScale(transformDefinition);
+                        transform.Rotate += new GeometryRotate(GeometryUtils.RadiansToDegrees(m.GetRotation()), 0.0, 0.0);
+                        transform.Scale *= m.GetScale();
+                        transform.Translate += m.GetTranslation();
+                    }
+                    break;
+                case "scale":
+                    {
+                        var scale = ParseScale(transformDefinition);
 
-                if (scale.X < 0)
-                {
-                    flipX = !flipX;
-                    scale.X = -scale.X;
-                }
+                        if (scale.X < 0)
+                        {
+                            flipX = !flipX;
+                            scale.X = -scale.X;
+                        }
 
-                if (scale.Y < 0)
-                {
-                    flipY = !flipY;
-                    scale.Y = -scale.Y;
-                }
+                        if (scale.Y < 0)
+                        {
+                            flipY = !flipY;
+                            scale.Y = -scale.Y;
+                        }
 
-                transform.Scale *= scale;
-            }
-            else if (transformDefinition.StartsWith("rotate", StringComparison.OrdinalIgnoreCase))
-            {
-                var rotation = ParseRotate(transformDefinition);
-                transform.Rotate.Angle += rotation.Angle;
-            }
-            else if (transformDefinition.StartsWith("translate", StringComparison.OrdinalIgnoreCase))
-            {
-                var translation = ParseTranslate(transformDefinition);
-                transform.Translate += translation;
-            }
-            else if (transformDefinition.StartsWith("skewx", StringComparison.OrdinalIgnoreCase))
-            {
-                var skew = ParseSkewX(transformDefinition);
-                transform.SkewX *= skew;
-            }
-            else if (transformDefinition.StartsWith("skewy", StringComparison.OrdinalIgnoreCase))
-            {
-                var skew = ParseSkewY(transformDefinition);
-                transform.SkewY *= skew;
+                        transform.Scale *= scale;
+                    }
+                    break;
+
+                case "rotate":
+                    {
+                        var rotation = ParseRotate(transformDefinition);
+                        transform.Rotate.Angle += rotation.Angle;
+                    }
+                    break;
+
+                case "translate":
+                    {
+                        var translation = ParseTranslate(transformDefinition);
+                        transform.Translate += translation;
+                    }
+                    break;
+
+                case "skewx":
+                    {
+                        var skew = ParseSkewX(transformDefinition);
+                        transform.SkewX *= skew;
+                    }
+                    break;
+                case "skewy":
+                    {
+                        var skew = ParseSkewY(transformDefinition);
+                        transform.SkewY *= skew;
+                    }
+                    break;
             }
         }
 

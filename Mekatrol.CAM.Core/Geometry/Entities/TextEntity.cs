@@ -35,8 +35,8 @@ public class TextEntity(
             Value,
             Font,
             Alignment,
-            (float)Location.X,
-            (float)Location.Y);
+            0,
+            0);
 
         // A piece of text can be made up of multiple polygons depending on the font
         // We need to break the point sets into multiple polygons

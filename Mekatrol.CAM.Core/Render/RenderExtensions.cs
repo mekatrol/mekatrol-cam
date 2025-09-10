@@ -3,7 +3,6 @@ using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Mekatrol.CAM.Core.Render;
 
@@ -181,24 +180,37 @@ public static class RenderExtensions
 
     public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
+        var scale = accumulatedTransform.GetScale();
+        var rotate = accumulatedTransform.GetRotation();
+        var translate = accumulatedTransform.GetTranslation();
+
+        var t = new GeometryTransform
+        {
+            Scale = scale,
+            Translate = translate,
+            Rotate = new GeometryRotate(0.0, 0.0, 0.0)
+        };
+
+        accumulatedTransform = t.GetMatrix();
+
         dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform,
             (pen) =>
             {
-                foreach (var poly in text.UntransformedPolylines)
+                foreach (var poly in text.TransformedPolylines)
                 {
                     for (var i = 1; i < poly.Length; i++)
                     {
-                        var p1 = poly[i - 1];
-                        var p2 = poly[i];
+                        var p1 = poly[i - 1] + text.Location;
+                        var p2 = poly[i] + text.Location;
                         dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
                     }
 
                     var first = poly[0];
                     var last = poly[^1];
 
-                    if(last != first)
+                    if (last != first)
                     {
-                        dc.DrawLine(pen, last.ToPt(), first.ToPt());
+                        dc.DrawLine(pen, (last + text.Location).ToPt(), (first + text.Location).ToPt());
                     }
                 }
             });
@@ -315,7 +327,7 @@ public static class RenderExtensions
         Matrix3 accumulatedTransform,
         Action<Pen> render)
     {
-        // Local -> world/device
+        // Local -> world/device: apply local, then parent/world
         var m = entity.Transform.GetMatrix() * accumulatedTransform;
 
         // Keep pen width ~penSize px on screen if scaled

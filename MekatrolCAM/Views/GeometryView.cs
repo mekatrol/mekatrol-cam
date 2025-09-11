@@ -51,8 +51,8 @@ public sealed class GeometryView : Control
 
     public void ZoomToFit(double padding = 20)
     {
-        var vp = Bounds;
-        if (vp.Width <= 0 || vp.Height <= 0)
+        var viewPort = Bounds;
+        if (viewPort.Width <= 0 || viewPort.Height <= 0)
         {
             return;
         }
@@ -68,13 +68,13 @@ public sealed class GeometryView : Control
             world = world.Inflate(1); // avoid degenerate
         }
 
-        var sx = (vp.Width - 2 * padding) / world.Width;
-        var sy = (vp.Height - 2 * padding) / world.Height;
+        var sx = (viewPort.Width - 2 * padding) / world.Width;
+        var sy = (viewPort.Height - 2 * padding) / world.Height;
         var s = Math.Clamp(Math.Min(sx, sy), 0.01, 100.0);
 
         Scale = (float)s;
 
-        var screenCenter = new Point(vp.Width / 2, vp.Height / 2);
+        var screenCenter = new Point(viewPort.Width / 2, viewPort.Height / 2);
         var worldCenter = world.Center;
         Pan = new Vector(
             screenCenter.X - worldCenter.X * s,

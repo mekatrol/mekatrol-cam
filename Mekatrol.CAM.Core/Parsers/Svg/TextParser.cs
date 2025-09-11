@@ -28,37 +28,15 @@ public class TextParser : SvgParserBase
     {
         AssertIsTag(element, "text");
 
-        // Get explicit x/y positions if provided.
-        var x = GetAttributeDoubleValue(element, "x").Value ?? 0.0;
-        var y = GetAttributeDoubleValue(element, "y").Value ?? 0.0;
-
-        // Delegate to sub-element parser for handling runs and tspans.
-        var path = (PathEntity)ParseTextSubElement(
-            element: element,
-            parentFont: _defaultFont,
-            parentX: x,
-            parentY: y);
-
-        // Wrap text characters with a path entity.
-        return new PathEntity(path.Location.X, path.Location.Y, path.Entities, false, ParseTransformAttribute(element));
-    }
-
-    // Core parser for a <text> or <tspan> element and its children.
-    private IGeometricEntity ParseTextSubElement(
-        XElement element,
-        FontDescription? parentFont,
-        double parentX,
-        double parentY)
-    {
         // Inherit or override element positioning.
-        var x = GetAttributeDoubleValue(element, "x").Value ?? parentX;
-        var yAnchor = GetAttributeDoubleValue(element, "y").Value ?? parentY;
+        var x = GetAttributeDoubleValue(element, "x").Value ?? 0;
+        var yAnchor = GetAttributeDoubleValue(element, "y").Value ?? 0;
 
         // Resolve transform chain (rotate, scale, translate, etc.).
         var transform = ParseTransformAttribute(element);
 
         // Determine font used by this element, possibly overridden by CSS or inline style.
-        var font = ResolveFont(element, parentFont ?? _defaultFont);
+        var font = ResolveFont(element, _defaultFont);
 
         // Determine text alignment (start, middle, end).
         var align = ResolveAlignment(element);

@@ -1,4 +1,5 @@
 ﻿using Avalonia.Media;
+using Mekatrol.CAM.Core.Converter;
 using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Geometry.Entities;
 using Mekatrol.CAM.Core.Render;
@@ -96,7 +97,7 @@ public class TextParser : SvgParserBase
 
                 if (!string.IsNullOrWhiteSpace(unit))
                 {
-                    fontSize = CssParser.ConvertMMToGraphicSize(fontSize, unit);
+                    fontSize = UnitSizeConverter.ConvertMMToGraphicSize(fontSize, unit);
                 }
                 font.Size = fontSize;
             }

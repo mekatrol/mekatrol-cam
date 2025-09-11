@@ -10,6 +10,9 @@ namespace Mekatrol.CAM.Core.Parsers.Svg;
 
 public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgParser
 {
+    private PointDouble _viewportLocation = new();
+    private PointDouble _viewportSize = new();
+
     public IGeometricPathEntity Parse(StreamReader stream, bool translateToZero = false)
     {
         if (stream == null || stream.EndOfStream)
@@ -38,28 +41,10 @@ public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgP
     {
         AssertIsTag(element, "svg");
 
-        var viewBoxAttr = GetAttributeValue(element, "viewBox");
+        var viewInfo = ViewBoxParser.ReadViewBox(element, OutputUnit.Millimeter);
 
-        var location = new PointDouble(0, 0);
-        var size = new PointDouble(0, 0);
-        var defaultViewPort = true;
-
-        var rx = new Regex(@"viewBox\s*=\s*""\s*(?<minx>-?\d+(?:\.\d+)?)\s+(?<miny>-?\d+(?:\.\d+)?)\s+(?<width>\d+(?:\.\d+)?)\s+(?<height>\d+(?:\.\d+)?)\s*""", RegexOptions.IgnoreCase);
-
-        var m = rx.Match(viewBoxAttr ?? string.Empty);
-        if (m.Success)
-        {
-            var minX = double.Parse(m.Groups["minx"].Value);
-            var minY = double.Parse(m.Groups["miny"].Value);
-            var width = double.Parse(m.Groups["width"].Value);
-            var height = double.Parse(m.Groups["height"].Value);
-
-            // Setting view point, don't use default
-            defaultViewPort = false;
-
-            location = new PointDouble(minX, minY);
-            size = new PointDouble(width, height);
-        }
+        _viewportLocation = new PointDouble(viewInfo.ViewBox.MinX, viewInfo.ViewBox.MinY);
+        _viewportSize = new PointDouble(viewInfo.ViewBox.Width, viewInfo.ViewBox.Height);
 
         var entities = ParseSvgElementChildren(element).ToList();
 
@@ -77,13 +62,7 @@ public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgP
             max = max.Max(entity.MaxUntransformed);
         }
 
-        if (defaultViewPort)
-        {
-            location = min;
-            size = max - min;
-        }
-
-        var viewEntity = new ViewEntity(location, size, entities, GeometryTransform.Identity);
+        var viewEntity = new ViewEntity(_viewportLocation, _viewportSize, entities, GeometryTransform.Identity);
         viewEntity.UpdateBoundary();
 
         return viewEntity;
@@ -188,14 +167,14 @@ public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgP
         return geometries;
     }
 
-    private static IGeometricEntity ParseRectElement(XElement element)
+    private IGeometricEntity ParseRectElement(XElement element)
     {
         AssertIsTag(element, "rect");
 
         var x = GetAttributeDoubleValue(element, "x").Value ?? 0.0;
         var y = GetAttributeDoubleValue(element, "y").Value ?? 0.0;
-        var w = GetAttributeDoubleValue(element, "width").Value ?? 1.0;
-        var h = GetAttributeDoubleValue(element, "height").Value ?? 1.0;
+        var (w, wu) = GetAttributeDoubleValue(element, "width");
+        var (h, hu) = GetAttributeDoubleValue(element, "height");
         var rx = GetAttributeDoubleValue(element, "rx").Value;
         var ry = GetAttributeDoubleValue(element, "ry").Value;
 
@@ -215,7 +194,25 @@ public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgP
             ry ??= rx;
         }
 
-        return new RectangleEntity(x, y, w, h, rx ?? 0.0, ry ?? 0.0, ParseTransformAttribute(element));
+        // Default to arbitrary value if null
+        w ??= 100;
+        h ??= 100;
+
+        // Width expressed as a percentage?
+        if (wu == "%")
+        {
+            // Width is percentage of viewport width
+            w = _viewportSize.X / 100.0 * w;
+        }
+
+        // Height expressed as a percentage?
+        if (hu == "%")
+        {
+            // Height is percentage of viewport height
+            h = _viewportSize.Y / 100.0 * h;
+        }
+
+        return new RectangleEntity(x, y, w ?? 1, h ?? 1, rx ?? 0.0, ry ?? 0.0, ParseTransformAttribute(element));
     }
 
     private static IGeometricEntity ParseCircleElement(XElement element)

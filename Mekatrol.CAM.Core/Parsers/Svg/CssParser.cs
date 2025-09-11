@@ -1,4 +1,5 @@
 ﻿using Avalonia.Media;
+using Mekatrol.CAM.Core.Converter;
 using Mekatrol.CAM.Core.Geometry;
 using Mekatrol.CAM.Core.Render;
 using System.Text.RegularExpressions;
@@ -114,7 +115,7 @@ public class CssParser
         if (string.IsNullOrWhiteSpace(unit)) { unit = "px"; }
 
         // Resolve to mm. Relative units use current font size as the context.
-        font.Size = ConvertGraphicSizeToMM(val, unit, currentFontSizeMm: (float)font.Size);
+        font.Size = UnitSizeConverter.ConvertGraphicSizeToMM(val, unit, currentFontSizeMm: (float)font.Size);
     }
 
     public static void ExtractFontWeight(string line, FontDescription font)
@@ -211,7 +212,7 @@ public class CssParser
             {
                 fontSize = float.Parse(match.Groups[1].Value);
                 var sizeUnit = match.Groups[2].Value;
-                fontSize = ConvertGraphicSizeToMM(fontSize, sizeUnit);
+                fontSize = UnitSizeConverter.ConvertGraphicSizeToMM(fontSize, sizeUnit);
                 break;
             }
         }
@@ -221,35 +222,6 @@ public class CssParser
 
         return new FontDescription(fontFamily.Name, fontSize, fontStyle, fontWeight);
     }
-
-    public static float ConvertGraphicSizeToMM(float size, string unit, float? currentFontSizeMm = null) =>
-        unit.ToLower().Trim() switch
-        {
-            "px" => size * 25.4f / 96.0f,
-            "in" => size * 25.4f,
-            "cm" => size * 10f,
-            "mm" => size,
-            "pt" => size * 25.4f / 72.0f,
-            "pc" => size * 12f * 25.4f / 72.0f,
-            "em" => size * (currentFontSizeMm ?? DefaultFontSize),
-            "%" => (size / 100.0f) * (currentFontSizeMm ?? DefaultFontSize),
-            _ => size,
-        };
-
-    public static float ConvertMMToGraphicSize(float mm, string unit, float? currentFontSizeMm = null) =>
-        unit.ToLower().Trim() switch
-        {
-            "px" => mm * 96.0f / 25.4f,
-            "in" => mm / 25.4f,
-            "cm" => mm / 10.0f,
-            "mm" => mm,
-            "pt" => mm * 72.0f / 25.4f,
-            "pc" => mm * 72.0f / (25.4f * 12.0f),
-            "em" => mm / (currentFontSizeMm ?? DefaultFontSize),
-            "%" => (mm / (currentFontSizeMm ?? DefaultFontSize)) * 100.0f,
-            _ => mm,
-        };
-
     private static string NextToken(ref string value)
     {
         // Clear any whitespace

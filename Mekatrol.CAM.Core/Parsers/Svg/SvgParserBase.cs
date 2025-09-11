@@ -18,7 +18,7 @@ public abstract class SvgParserBase(ILogger logger)
 
     protected IDictionary<string, CssClass> _cssClasses = new Dictionary<string, CssClass>(StringComparer.OrdinalIgnoreCase);
 
-    protected static void AssertIsTag(XElement element, string tagName)
+    public static void AssertIsTag(XElement element, string tagName)
     {
         var lineInfo = (IXmlLineInfo)element;
         if (!element.Name.LocalName.Equals(tagName, StringComparison.OrdinalIgnoreCase))

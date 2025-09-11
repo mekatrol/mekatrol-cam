@@ -49,6 +49,12 @@ public sealed class GeometryView : Control
         set => SetValue(PointRadiusProperty, value);
     }
 
+    public GeometryView()
+    {
+        Focusable = true;
+    }
+
+
     public void ZoomToFit(double padding = 20)
     {
         var viewPort = Bounds;
@@ -120,12 +126,23 @@ public sealed class GeometryView : Control
         return new Rect(minX, minY, Math.Max(1e-6, maxX - minX), Math.Max(1e-6, maxY - minY));
     }
 
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.F) // case-insensitive by design
+        {
+            ZoomToFit();     // your method from earlier
+            e.Handled = true;
+        }
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             _panning = true;
+            Focus(); // ensure we get keyboard events
             _lastScreen = e.GetPosition(this);
             e.Pointer.Capture(this);
             e.Handled = true;
@@ -237,10 +254,6 @@ public sealed class GeometryView : Control
 
                     foreach (var entity in Path.Entities)
                     {
-                        var b = entity.BoundaryUntransformed;
-                        var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
-                        context.DrawRectangle(null, boundsPen, rect);
-
                         context.Draw(entity, color, penSize, Scale, entity.Transform.GetMatrix());
                     }
                 }

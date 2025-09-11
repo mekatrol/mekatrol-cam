@@ -57,9 +57,9 @@ public class PathEntity(double x, double y, IList<IGeometricEntity> entities, bo
             entity.UpdateBoundary();
 
             _minUntransformed = _minUntransformed.Min(entity.MinUntransformed);
-            _maxUntransformed = _maxUntransformed.Min(entity.MaxUntransformed);
-            _minTransformed = _minUntransformed.Max(entity.MinTransformed);
-            _maxTransformed = _maxUntransformed.Max(entity.MaxTransformed);
+            _maxUntransformed = _maxUntransformed.Max(entity.MaxUntransformed);
+            _minTransformed = _minTransformed.Min(entity.MinTransformed);
+            _maxTransformed = _maxTransformed.Max(entity.MaxTransformed);
         }
 
         base.UpdateBoundary();
@@ -75,5 +75,7 @@ public class PathEntity(double x, double y, IList<IGeometricEntity> entities, bo
             // Transform children
             entity.InitializeState(cumulativeTransform);
         }
+
+        UpdateBoundary();
     }
 }

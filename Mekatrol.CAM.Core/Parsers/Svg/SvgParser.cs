@@ -23,47 +23,70 @@ public class SvgParser(ILogger<SvgParser> logger) : SvgParserBase(logger), ISvgP
             return new PathEntity();
         }
 
-        var pathEntity = ParseSvgElement(xmlDocument.Root);
-
-        // Create untransformed andtransformed points and boundaries
-        pathEntity.InitializeState(GeometryTransform.Identity);
+        var viewEntity = ParseSvgElement(xmlDocument.Root);
 
         // Translate path from (minx, miny) to (0, 0)
         if (translateToZero)
         {
-            var translate = new PointDouble();
-
-            foreach (var entity in pathEntity.Entities)
-            {
-                // Update translate to minimum of location and current translate value
-                translate = translate.Min(entity.Location);
-            }
-
-            foreach (var entity in pathEntity.Entities)
-            {
-                entity.TranslateLocation(translate);
-            }
+            viewEntity.TranslateLocation(-viewEntity.Location);
         }
 
-        return pathEntity;
+        return viewEntity;
     }
 
     private IGeometricPathEntity ParseSvgElement(XElement element)
     {
         AssertIsTag(element, "svg");
 
-        var viewBox = GetAttributeValue(element, "viewBox");
-        if (!string.IsNullOrWhiteSpace(viewBox))
+        var viewBoxAttr = GetAttributeValue(element, "viewBox");
+
+        var location = new PointDouble(0, 0);
+        var size = new PointDouble(0, 0);
+        var defaultViewPort = true;
+
+        var rx = new Regex(@"viewBox\s*=\s*""\s*(?<minx>-?\d+(?:\.\d+)?)\s+(?<miny>-?\d+(?:\.\d+)?)\s+(?<width>\d+(?:\.\d+)?)\s+(?<height>\d+(?:\.\d+)?)\s*""", RegexOptions.IgnoreCase);
+
+        var m = rx.Match(viewBoxAttr ?? string.Empty);
+        if (m.Success)
         {
-            var parts = viewBox.Split([' '], StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 4)
-            {
-                // TODO: scale to view box
-                var _ = parts.Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
-            }
+            var minX = double.Parse(m.Groups["minx"].Value);
+            var minY = double.Parse(m.Groups["miny"].Value);
+            var width = double.Parse(m.Groups["width"].Value);
+            var height = double.Parse(m.Groups["height"].Value);
+
+            // Setting view point, don't use default
+            defaultViewPort = false;
+
+            location = new PointDouble(minX, minY);
+            size = new PointDouble(width, height);
         }
 
-        return new PathEntity(0, 0, ParseSvgElementChildren(element).ToList(), false, GeometryTransform.Identity);
+        var entities = ParseSvgElementChildren(element).ToList();
+
+        // Determine view port from min and max values of all enities in the view
+        var min = new PointDouble(0, 0);
+        var max = new PointDouble(0, 0);
+
+        foreach (var entity in entities)
+        {
+            // Create untransformed and transformed points and boundaries
+            entity.InitializeState(GeometryTransform.Identity);
+
+            // Update min/max from entity
+            min = min.Min(entity.MinUntransformed);
+            max = max.Max(entity.MaxUntransformed);
+        }
+
+        if (defaultViewPort)
+        {
+            location = min;
+            size = max - min;
+        }
+
+        var viewEntity = new ViewEntity(location, size, entities, GeometryTransform.Identity);
+        viewEntity.UpdateBoundary();
+
+        return viewEntity;
     }
 
     private IGeometricEntity ParseGElement(XElement element)

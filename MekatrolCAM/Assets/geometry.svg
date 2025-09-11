@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260">
 
 	<!-- background -->
-	<!--<rect width="100%" height="100%" fill="#ddd"/>-->
-	<rect width="820" height="260" fill="#ddd"/>
+	<rect width="100%" height="100%" fill="#ddd"/>
 
 	<!-- stroke styles and rounded joins/caps to test rendering -->
 	<g stroke="#000" stroke-width="1" fill="none" stroke-linejoin="round" stroke-linecap="round">

@@ -84,25 +84,24 @@ public sealed class GeometryView : Control
         InvalidateVisual();
     }
 
-    // call this in your Path setter after SetAndRaise(...)
     private Rect GetWorldBounds()
     {
-        Rect? acc = null;
+        Rect? accumulator = null;
 
         foreach (var e in Path.Entities)
         {
-            // untransformed rect in world units
+            // Untransformed rect in world units
             var b = e.BoundaryUntransformed;
             var r = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
 
-            // include per-entity transform
+            // Include per-entity transform
             var m = e.Transform.GetMatrix();
             var tr = TransformRect(m.ToAvaloniaMatrix(), r);
 
-            acc = acc is null ? tr : acc.Value.Union(tr);
+            accumulator = accumulator is null ? tr : accumulator.Value.Union(tr);
         }
 
-        return acc ?? new Rect(0, 0, 1, 1);
+        return accumulator ?? new Rect(0, 0, 1, 1);
     }
 
     private static Rect TransformRect(Matrix m, Rect r)

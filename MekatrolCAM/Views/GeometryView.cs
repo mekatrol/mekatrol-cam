@@ -15,6 +15,7 @@ public sealed class GeometryView : Control
             nameof(Path), o => o.Path, (o, v) => o.Path = v);
 
     private IGeometricPathEntity _path = new PathEntity();
+
     public IGeometricPathEntity Path
     {
         get => _path;
@@ -29,16 +30,16 @@ public sealed class GeometryView : Control
         set => SetValue(ScaleProperty, value);
     }
 
-    public static readonly StyledProperty<Vector> PanProperty =
-        AvaloniaProperty.Register<GeometryView, Vector>(nameof(Pan), default);
+    public static readonly StyledProperty<Vector> PanProperty = AvaloniaProperty.Register<GeometryView, Vector>(nameof(Pan), default);
+
     public Vector Pan
     {
         get => GetValue(PanProperty);
         set => SetValue(PanProperty, value);
     }
 
-    public static readonly StyledProperty<double> PointRadiusProperty =
-        AvaloniaProperty.Register<GeometryView, double>(nameof(PointRadius), 0.5);
+    public static readonly StyledProperty<double> PointRadiusProperty = AvaloniaProperty.Register<GeometryView, double>(nameof(PointRadius), 0.5);
+
     public double PointRadius
     {
         get => GetValue(PointRadiusProperty);
@@ -110,25 +111,68 @@ public sealed class GeometryView : Control
 
     public override void Render(DrawingContext context)
     {
-        context.DrawRectangle(Brushes.Black, null, Bounds);
-        if (Path.Entities is null || Path.Entities.Count == 0) { return; }
-
-        var color = Colors.GreenYellow;
-        var penSize = 2.0f;
-
-        // screen = world * Scale + Pan  =>  T(Pan) * S(Scale)
-        using (context.PushTransform(Matrix.CreateTranslation(Pan.X, Pan.Y)))
-        using (context.PushTransform(Matrix.CreateScale(Scale, Scale)))
+        using (context.PushClip(Bounds))
         {
-            var boundsPen = new Pen(Brushes.DarkGray, 0.5 / Scale);
+            var w = Bounds.Width;
+            var h = Bounds.Height;
 
-            foreach (var entity in Path.Entities)
+            // ensure we have a hit-test surface
+            context.FillRectangle(new SolidColorBrush(Colors.Transparent), Bounds);
+
+            if (Scale <= 0)
             {
-                var b = entity.BoundaryUntransformed; // world rect
-                var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
-                context.DrawRectangle(null, boundsPen, rect);
+                return;
+            }
 
-                context.Draw(entity, color, penSize, Scale, entity.Transform.GetMatrix());
+            // world-space drawing (grid + entities)
+            using (context.PushTransform(Matrix.CreateTranslation(Pan.X, Pan.Y)))
+            using (context.PushTransform(Matrix.CreateScale(Scale, Scale)))
+            {
+                // viewport in world units
+                var inv = 1.0 / Scale;
+                var worldLeft = -Pan.X * inv;
+                var worldTop = -Pan.Y * inv;
+                var worldRight = worldLeft + w * inv;
+                var worldBottom = worldTop + h * inv;
+
+                // grid step in world units
+                const double step = 20.0; // = 20 px at Scale = 1
+
+                // start positions snapped to step
+                static double Snap(double v, double s) => Math.Floor(v / s) * s;
+                var x0 = Snap(worldLeft, step);
+                var y0 = Snap(worldTop, step);
+
+                // 50% opacity brush, 1px screen pen => thickness = 1/Scale
+                var gridColor = (Application.Current!.Resources["OrangeBrush"] as SolidColorBrush)?.Color ?? Colors.Orange;
+                var gridPen = new Pen(new SolidColorBrush(gridColor, 0.5), 1.0 / Scale);
+
+                for (var x = x0; x <= worldRight; x += step)
+                {
+                    context.DrawLine(gridPen, new Point(x, worldTop), new Point(x, worldBottom));
+                }
+
+                for (var y = y0; y <= worldBottom; y += step)
+                {
+                    context.DrawLine(gridPen, new Point(worldLeft, y), new Point(worldRight, y));
+                }
+
+                // geometry
+                if (Path.Entities is { Count: > 0 })
+                {
+                    var boundsPen = new Pen(Brushes.DarkGray, 0.5 / Scale);
+                    var color = Colors.GreenYellow;
+                    var penSize = 2.0f;
+
+                    foreach (var entity in Path.Entities)
+                    {
+                        var b = entity.BoundaryUntransformed;
+                        var rect = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
+                        context.DrawRectangle(null, boundsPen, rect);
+
+                        context.Draw(entity, color, penSize, Scale, entity.Transform.GetMatrix());
+                    }
+                }
             }
         }
     }

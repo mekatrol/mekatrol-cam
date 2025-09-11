@@ -25,5 +25,7 @@
 		<SolidColorBrush x:Key="PurpleBrush" Color="#FFD500F9"/>
 		<SolidColorBrush x:Key="CyanBrush"   Color="#FF00E5FF"/>
 		<SolidColorBrush x:Key="OrangeBrush" Color="#FFFF6D00"/>
+
+		<SolidColorBrush x:Key="ThemeBackgroundBrush" Color="#444444"/>
 	</Application.Resources>
 </Application>

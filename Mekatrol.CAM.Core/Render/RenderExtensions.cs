@@ -180,28 +180,16 @@ public static class RenderExtensions
 
     public static void Draw(this DrawingContext dc, TextEntity text, Color color, float penSize, float viewScale, Matrix3 accumulatedTransform)
     {
-        var scale = accumulatedTransform.GetScale();
-        var rotate = accumulatedTransform.GetRotation();
-        var translate = accumulatedTransform.GetTranslation();
-
-        var t = new GeometryTransform
-        {
-            Scale = scale,
-            Translate = translate,
-            Rotate = new GeometryRotate(0.0, 0.0, 0.0)
-        };
-
-        accumulatedTransform = t.GetMatrix();
-
-        dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform,
+        // Text needs to be translated to its starting location (after other transforms such as scale and rotate)
+        dc.DrawTransformed(text, color, penSize, viewScale, accumulatedTransform * Matrix3.CreateTranslate(text.Location),
             (pen) =>
             {
-                foreach (var poly in text.TransformedPolylines)
+                foreach (var poly in text.UntransformedPolylines)
                 {
                     for (var i = 1; i < poly.Length; i++)
                     {
-                        var p1 = poly[i - 1] + text.Location;
-                        var p2 = poly[i] + text.Location;
+                        var p1 = poly[i - 1];
+                        var p2 = poly[i];
                         dc.DrawLine(pen, p1.ToPt(), p2.ToPt());
                     }
 
@@ -210,7 +198,7 @@ public static class RenderExtensions
 
                     if (last != first)
                     {
-                        dc.DrawLine(pen, (last + text.Location).ToPt(), (first + text.Location).ToPt());
+                        dc.DrawLine(pen, last.ToPt(), first.ToPt());
                     }
                 }
             });

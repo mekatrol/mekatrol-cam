@@ -10,6 +10,9 @@ namespace MekatrolCAM.Views;
 
 public sealed class GeometryView : Control
 {
+    private bool _panning;
+    private Point _lastScreen;
+
     public static readonly DirectProperty<GeometryView, IGeometricPathEntity> PathProperty =
         AvaloniaProperty.RegisterDirect<GeometryView, IGeometricPathEntity>(
             nameof(Path), o => o.Path, (o, v) => o.Path = v);
@@ -19,7 +22,7 @@ public sealed class GeometryView : Control
     public IGeometricPathEntity Path
     {
         get => _path;
-        set { SetAndRaise(PathProperty, ref _path, value); InvalidateVisual(); }
+        set { SetAndRaise(PathProperty, ref _path, value); ZoomToFit(); }
     }
 
     public static readonly StyledProperty<float> ScaleProperty =
@@ -46,8 +49,77 @@ public sealed class GeometryView : Control
         set => SetValue(PointRadiusProperty, value);
     }
 
-    private bool _panning;
-    private Point _lastScreen;
+    public void ZoomToFit(double padding = 20)
+    {
+        var vp = Bounds;
+        if (vp.Width <= 0 || vp.Height <= 0)
+        {
+            return;
+        }
+
+        if (Path?.Entities is null || Path.Entities.Count == 0)
+        {
+            return;
+        }
+
+        var world = GetWorldBounds();
+        if (world.Width <= 0 || world.Height <= 0)
+        {
+            world = world.Inflate(1); // avoid degenerate
+        }
+
+        var sx = (vp.Width - 2 * padding) / world.Width;
+        var sy = (vp.Height - 2 * padding) / world.Height;
+        var s = Math.Clamp(Math.Min(sx, sy), 0.01, 100.0);
+
+        Scale = (float)s;
+
+        var screenCenter = new Point(vp.Width / 2, vp.Height / 2);
+        var worldCenter = world.Center;
+        Pan = new Vector(
+            screenCenter.X - worldCenter.X * s,
+            screenCenter.Y - worldCenter.Y * s
+        );
+
+        InvalidateVisual();
+    }
+
+    // call this in your Path setter after SetAndRaise(...)
+    private Rect GetWorldBounds()
+    {
+        Rect? acc = null;
+
+        foreach (var e in Path.Entities)
+        {
+            // untransformed rect in world units
+            var b = e.BoundaryUntransformed;
+            var r = new Rect(b.Location.X, b.Location.Y, b.Size.X, b.Size.Y);
+
+            // include per-entity transform
+            var m = e.Transform.GetMatrix();
+            var tr = TransformRect(m.ToAvaloniaMatrix(), r);
+
+            acc = acc is null ? tr : acc.Value.Union(tr);
+        }
+
+        return acc ?? new Rect(0, 0, 1, 1);
+    }
+
+    private static Rect TransformRect(Matrix m, Rect r)
+    {
+        var p0 = r.TopLeft; var p1 = r.TopRight;
+        var p2 = r.BottomRight; var p3 = r.BottomLeft;
+
+        p0 = m.Transform(p0); p1 = m.Transform(p1);
+        p2 = m.Transform(p2); p3 = m.Transform(p3);
+
+        var minX = Math.Min(Math.Min(p0.X, p1.X), Math.Min(p2.X, p3.X));
+        var minY = Math.Min(Math.Min(p0.Y, p1.Y), Math.Min(p2.Y, p3.Y));
+        var maxX = Math.Max(Math.Max(p0.X, p1.X), Math.Max(p2.X, p3.X));
+        var maxY = Math.Max(Math.Max(p0.Y, p1.Y), Math.Max(p2.Y, p3.Y));
+
+        return new Rect(minX, minY, Math.Max(1e-6, maxX - minX), Math.Max(1e-6, maxY - minY));
+    }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {

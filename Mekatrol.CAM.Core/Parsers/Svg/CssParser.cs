@@ -96,12 +96,12 @@ public class CssParser
         // Accept either "font-size: 14px" or "14px" or "120%"
         var s = input;
         var i = s.IndexOf("font-size:", StringComparison.OrdinalIgnoreCase);
-        
+
         if (i >= 0)
         {
             s = s[(i + "font-size:".Length)..];
         }
-        
+
         s = s.Trim();
 
         // number + unit [+ optional /line-height which we ignore]

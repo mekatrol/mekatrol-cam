@@ -554,7 +554,7 @@ public static class GeometryUtils
                         var c1 = new PointDouble(rawPts[1].X, rawPts[1].Y); // Control point 1
                         var c2 = new PointDouble(rawPts[2].X, rawPts[2].Y); // Control point 2
                         var e = new PointDouble(rawPts[3].X, rawPts[3].Y);  // End point
-                        
+
                         current = e;
 
                         contour.Segments.Add(new ContourSegment(ControurSegmentType.Quadratic, [s, c1, c2, e]));

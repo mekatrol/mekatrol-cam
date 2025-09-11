@@ -1,6 +1,7 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class EllipseEntity(double x, double y, double rx, double ry, GeometryTransform transform, Guid? id = null) : BaseEntity(GeometricEntityType.Ellipse, id, new PointDouble(x, y), transform), IGeometricEntity
+public class EllipseEntity(double x, double y, double rx, double ry, GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Ellipse, new PointDouble(x, y), transform), IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

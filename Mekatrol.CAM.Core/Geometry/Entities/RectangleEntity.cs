@@ -1,7 +1,7 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class RectangleEntity(double x, double y, double w, double h, double rx, double ry, GeometryTransform transform, Guid? id = null)
-    : BaseEntity(GeometricEntityType.Rectangle, id, new PointDouble(x, y), transform), IGeometricEntity
+public class RectangleEntity(double x, double y, double w, double h, double rx, double ry, GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Rectangle, new PointDouble(x, y), transform), IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

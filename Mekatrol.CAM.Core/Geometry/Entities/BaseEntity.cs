@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble location, GeometryTransform transform) : IGeometricEntity
+public abstract class BaseEntity(GeometricEntityType type, PointDouble location, GeometryTransform transform) : IGeometricEntity
 {
     protected PointDouble _minUntransformed = new();
     protected PointDouble _maxUntransformed = new();
@@ -17,8 +17,6 @@ public abstract class BaseEntity(GeometricEntityType type, Guid? id, PointDouble
     protected List<PointDouble[]> _transformedPolylines = [];
 
     public GeometricEntityType Type { get; set; } = type;
-
-    public Guid Id { get; set; } = (id != null && id != Guid.Empty) ? id.Value : Guid.NewGuid();
 
     public IReadOnlyList<PointDouble[]> UntransformedPolylines { get { return _untransformedPolylines; } }
 

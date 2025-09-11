@@ -4,8 +4,6 @@ public interface IGeometricEntity
 {
     GeometricEntityType Type { get; }
 
-    Guid Id { get; }
-
     PointDouble Location { get; }
 
     IReadOnlyList<PointDouble[]> UntransformedPolylines { get; }

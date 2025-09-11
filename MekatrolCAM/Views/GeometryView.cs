@@ -54,7 +54,6 @@ public sealed class GeometryView : Control
         Focusable = true;
     }
 
-
     public void ZoomToFit(double padding = 20)
     {
         var viewPort = Bounds;

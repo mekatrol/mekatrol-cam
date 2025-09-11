@@ -1,18 +1,19 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class CircleEntity(double centerX, double centerY, double radius, GeometryTransform transform, Guid? id = null) : BaseEntity(GeometricEntityType.Circle, id, new PointDouble(centerX, centerY), transform), IGeometricEntity
+public class CircleEntity(double centerX, double centerY, double radius, GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Circle, new PointDouble(centerX, centerY), transform), IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer
     /// </summary>
     public CircleEntity()
-        : this(0, 0, 1, new GeometryTransform(), null)
+        : this(0, 0, 1, new GeometryTransform())
     {
 
     }
 
-    public CircleEntity(PointDouble center, double radius, Guid? id)
-        : this(center.X, center.Y, radius, new GeometryTransform(), id)
+    public CircleEntity(PointDouble center, double radius)
+        : this(center.X, center.Y, radius, new GeometryTransform())
     {
     }
 

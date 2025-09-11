@@ -2,11 +2,11 @@
 
 namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class PathEntity(double x, double y, IList<IGeometricEntity> entities, bool closed, GeometryTransform transform, Guid? id = null)
-    : BaseEntity(GeometricEntityType.Path, id, new PointDouble(x, y), transform), IGeometricPathEntity
+public class PathEntity(double x, double y, IList<IGeometricEntity> entities, bool closed, GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Path, new PointDouble(x, y), transform), IGeometricPathEntity
 {
     public PathEntity()
-        : this(0, 0, [], false, new GeometryTransform(), null)
+        : this(0, 0, [], false, new GeometryTransform())
     {
     }
 

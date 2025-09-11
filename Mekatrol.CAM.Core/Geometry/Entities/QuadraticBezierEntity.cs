@@ -2,8 +2,8 @@
 
 public class QuadraticBezierEntity : BaseEntity, IGeometricEntity
 {
-    public QuadraticBezierEntity(PointDouble location, PointDouble control, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
-        : base(GeometricEntityType.QuadraticBezier, id, location, transform)
+    public QuadraticBezierEntity(PointDouble location, PointDouble control, PointDouble endLocation, GeometryTransform transform)
+        : base(GeometricEntityType.QuadraticBezier, location, transform)
     {
         EndLocation = endLocation;
         Control = control;

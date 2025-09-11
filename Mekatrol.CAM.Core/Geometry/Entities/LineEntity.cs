@@ -1,9 +1,10 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class LineEntity(double x1, double y1, double x2, double y2, GeometryTransform transform, Guid? id = null) : BaseEntity(GeometricEntityType.Line, id, new PointDouble(x1, y1), transform), IGeometricEntity
+public class LineEntity(double x1, double y1, double x2, double y2, GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Line, new PointDouble(x1, y1), transform), IGeometricEntity
 {
-    public LineEntity(PointDouble startLocation, PointDouble endLocation, GeometryTransform transform, Guid? id = null)
-        : this(startLocation.X, startLocation.Y, endLocation.X, endLocation.Y, transform, id)
+    public LineEntity(PointDouble startLocation, PointDouble endLocation, GeometryTransform transform)
+        : this(startLocation.X, startLocation.Y, endLocation.X, endLocation.Y, transform)
     {
     }
 

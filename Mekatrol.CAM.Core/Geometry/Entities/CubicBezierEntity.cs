@@ -1,6 +1,7 @@
 ﻿namespace Mekatrol.CAM.Core.Geometry.Entities;
 
-public class CubicBezierEntity(PointDouble location, PointDouble control1, PointDouble control2, PointDouble endLocation, GeometryTransform transform, Guid? id = null) : BaseEntity(GeometricEntityType.CubicBezier, id, location, transform), IGeometricEntity
+public class CubicBezierEntity(PointDouble location, PointDouble control1, PointDouble control2, PointDouble endLocation, GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.CubicBezier, location, transform), IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

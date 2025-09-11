@@ -9,9 +9,8 @@ public class TextEntity(
     string value,
     FontDescription font,
     TextAlignment alignment,
-    GeometryTransform transform,
-    Guid? id = null)
-    : BaseEntity(GeometricEntityType.Text, id, new PointDouble(x, y), transform)
+    GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Text, new PointDouble(x, y), transform)
 {
     /// <summary>
     /// This empty constructor is used by the serializer

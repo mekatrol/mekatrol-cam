@@ -10,8 +10,8 @@ public class ArcEntity(
     double startAngle,
     double sweepAngle,
     double ellipseRotation,
-    GeometryTransform transform,
-    Guid? id = null) : BaseEntity(GeometricEntityType.Arc, id, centerLocation, transform), IGeometricEntity
+    GeometryTransform transform)
+    : BaseEntity(GeometricEntityType.Arc, centerLocation, transform), IGeometricEntity
 {
     /// <summary>
     /// This empty constructor is used by the serializer

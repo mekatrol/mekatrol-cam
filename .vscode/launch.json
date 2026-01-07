@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug cam-ui",
+            "name": "Debug cam-ui (debug)",
             "type": "lldb",
             "request": "launch",
             "cargo": {
@@ -12,8 +12,27 @@
                     "cam-ui"
                 ]
             },
-            "args": [],
             "cwd": "${workspaceFolder}",
+            "args": [],
+            "env": {},
+            "sourceLanguages": [
+                "rust"
+            ]
+        },
+        {
+            "name": "Run cam-ui (release)",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--release",
+                    "-p",
+                    "cam-ui"
+                ]
+            },
+            "cwd": "${workspaceFolder}",
+            "args": [],
             "env": {},
             "sourceLanguages": [
                 "rust"

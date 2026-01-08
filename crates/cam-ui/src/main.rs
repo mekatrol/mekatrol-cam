@@ -1,6 +1,7 @@
 use cam_core::parse_svg;
 use cam_core::usvg::{Group, Node, Tree};
 use eframe::egui;
+use rfd::FileDialog;
 
 struct CamApp {
     svg_path: String,
@@ -128,6 +129,15 @@ impl eframe::App for CamApp {
             ui.horizontal(|ui| {
                 ui.label("SVG path:");
                 ui.text_edit_singleline(&mut self.svg_path);
+                if ui.button("Open...").clicked() {
+                    if let Some(path) = FileDialog::new()
+                        .add_filter("SVG", &["svg"])
+                        .pick_file()
+                    {
+                        self.svg_path = path.display().to_string();
+                        self.reload();
+                    }
+                }
                 if ui.button("Reload").clicked() {
                     self.reload();
                 }

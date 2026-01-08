@@ -8,3 +8,4 @@ cam-core = { path = "../cam-core" }
 eframe = "0.27"
 resvg = "0.45"
 tiny-skia = "0.11"
+rfd = "0.14"

@@ -230,6 +230,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Mekatrol CAM",
         options,
-        Box::new(|_cc| Box::new(CamApp::new(String::new()))),
+        Box::new(|_cc| Ok(Box::new(CamApp::new(String::new())))),
     )
 }

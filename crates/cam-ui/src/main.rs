@@ -74,6 +74,7 @@ impl CamApp {
         };
 
         let mut target = pixmap.as_mut();
+        draw_checkerboard(&mut target);
         resvg::render(tree, tiny_skia::Transform::default(), &mut target);
 
         let image = egui::ColorImage::from_rgba_premultiplied(
@@ -87,6 +88,37 @@ impl CamApp {
         );
         self.texture = Some(texture);
         self.render_size = Some((width, height));
+    }
+}
+
+fn draw_checkerboard(pixmap: &mut tiny_skia::PixmapMut<'_>) {
+    let tile = 16u32;
+    let w = pixmap.width();
+    let h = pixmap.height();
+
+    let mut paint = tiny_skia::Paint::default();
+    paint.anti_alias = false;
+
+    let light = tiny_skia::Color::from_rgba8(230, 230, 230, 255);
+    let dark = tiny_skia::Color::from_rgba8(200, 200, 200, 255);
+
+    let tiles_x = (w + tile - 1) / tile;
+    let tiles_y = (h + tile - 1) / tile;
+
+    for y in 0..tiles_y {
+        for x in 0..tiles_x {
+            let use_light = (x + y) % 2 == 0;
+            paint.set_color(if use_light { light } else { dark });
+
+            let rect_x = (x * tile) as f32;
+            let rect_y = (y * tile) as f32;
+            let rect_w = (tile.min(w - x * tile)) as f32;
+            let rect_h = (tile.min(h - y * tile)) as f32;
+
+            if let Some(rect) = tiny_skia::Rect::from_xywh(rect_x, rect_y, rect_w, rect_h) {
+                pixmap.fill_rect(rect, &paint, tiny_skia::Transform::identity(), None);
+            }
+        }
     }
 }
 

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="400mm"
+  height="400mm"
+  viewBox="0 0 400 450">
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      @font-face {
+        font-family: "LiberationMonoBold";
+        src: url("LiberationMono-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+      }
+    ]]></style>
+  </defs>
+
+  <!-- Outlined “6”, no fill -->
+  <text
+    x="0"
+    y="0"
+    font-family="LiberationMonoBold"
+    font-size="150mm"
+    fill="none"
+    stroke="black"
+    stroke-width="2mm"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    paint-order="stroke"
+    dominant-baseline="hanging">
+    6
+  </text>
+</svg>

@@ -1,14 +1,16 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+use usvg::{Options, Tree};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use usvg;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+pub fn parse_svg(svg_bytes: &[u8]) -> Result<Tree, usvg::Error> {
+    let mut opt = Options::default();
+
+    if let Err(e) = opt
+        .fontdb_mut()
+        .load_font_file("./test-files/LiberationMono-Bold.ttf")
+    {
+        eprintln!("Warning: failed to load font: {e}");
     }
+
+    Tree::from_data(svg_bytes, &opt)
 }

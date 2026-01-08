@@ -14,7 +14,7 @@ struct CamApp {
 
 impl CamApp {
     fn new(svg_path: impl Into<String>) -> Self {
-        let mut app = Self {
+        let app = Self {
             svg_path: svg_path.into(),
             tree: None,
             error: None,
@@ -22,7 +22,6 @@ impl CamApp {
             needs_render: false,
             render_size: None,
         };
-        app.reload();
         app
     }
 
@@ -231,6 +230,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Mekatrol CAM",
         options,
-        Box::new(|_cc| Box::new(CamApp::new("./test-files/six.svg"))),
+        Box::new(|_cc| Box::new(CamApp::new(String::new()))),
     )
 }
